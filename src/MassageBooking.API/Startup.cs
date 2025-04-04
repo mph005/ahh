@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using MassageBooking.API.Data;
 using MassageBooking.API.Data.Repositories;
 using MassageBooking.API.Services;
+using MassageBooking.API.Configuration;
 
 namespace MassageBooking.API
 {
@@ -34,9 +35,17 @@ namespace MassageBooking.API
             services.AddScoped<IServiceRepository, ServiceRepository>();
             services.AddScoped<ITherapistRepository, TherapistRepository>();
             services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+            services.AddScoped<ISoapNoteRepository, SoapNoteRepository>();
 
             // Register services
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<ITherapistService, TherapistService>();
+            services.AddScoped<IClientService, ClientService>();
+            services.AddScoped<IEmailService, EmailService>();
+
+            // Configure email settings
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
 
             // Add controllers
             services.AddControllers()

@@ -248,821 +248,78 @@ Used for encapsulating reusable logic:
 
 ```javascript
 import { useState, useEffect } from 'react';
-import { fetchTherapists } from '../api/therapistApi';
+import { appointmentApi } from '../api';
 
-export const useTherapists = (serviceId = null) => {
-  const [therapists, setTherapists] = useState([]);
+export function useAppointments(clientId) {
+  const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    const loadTherapists = async () => {
+    let isMounted = true;
+    
+    async function fetchData() {
       try {
         setIsLoading(true);
-        const data = await fetchTherapists(serviceId);
-        setTherapists(data);
-        setError(null);
+        const response = await appointmentApi.getAppointmentsByClientId(clientId);
+        
+        if (isMounted) {
+          setAppointments(response.data);
+          setError(null);
+        }
       } catch (err) {
-        setError('Failed to load therapists');
-        console.error(err);
+        if (isMounted) {
+          setError('Failed to load appointments');
+          console.error(err);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
+    }
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
     };
-    
-    loadTherapists();
-  }, [serviceId]);
+  }, [clientId]);
   
-  return { therapists, isLoading, error };
-};
-```
-
-## Database Schema
-
-### Entity Framework Core Conventions
-
-- Use Fluent API for complex configurations
-- Apply data annotations for simple constraints
-- Configure relationships explicitly
-- Use value converters for non-standard types
-- Configure indexes for performance
-
-Example configuration:
-
-```csharp
-public class ApplicationDbContext : DbContext
-{
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
-    {
-    }
-    
-    public DbSet<User> Users { get; set; }
-    public DbSet<Client> Clients { get; set; }
-    public DbSet<Therapist> Therapists { get; set; }
-    public DbSet<Service> Services { get; set; }
-    public DbSet<Appointment> Appointments { get; set; }
-    public DbSet<Availability> Availabilities { get; set; }
-    public DbSet<IntakeForm> IntakeForms { get; set; }
-    public DbSet<SOAPNote> SOAPNotes { get; set; }
-    
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        // User configuration
-        modelBuilder.Entity<User>()
-            .HasKey(u => u.UserId);
-            
-        modelBuilder.Entity<User>()
-            .Property(u => u.Email)
-            .IsRequired()
-            .HasMaxLength(256);
-            
-        // Appointment configuration
-        modelBuilder.Entity<Appointment>()
-            .HasKey(a => a.AppointmentId);
-            
-        modelBuilder.Entity<Appointment>()
-            .HasOne(a => a.Client)
-            .WithMany(c => c.Appointments)
-            .HasForeignKey(a => a.ClientId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        modelBuilder.Entity<Appointment>()
-            .HasOne(a => a.Therapist)
-            .WithMany(t => t.Appointments)
-            .HasForeignKey(a => a.TherapistId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        modelBuilder.Entity<Appointment>()
-            .HasOne(a => a.Service)
-            .WithMany(s => s.Appointments)
-            .HasForeignKey(a => a.ServiceId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        // Additional configurations
-    }
+  return { appointments, isLoading, error };
 }
 ```
 
-## API Design
-
-### RESTful API Conventions
-
-- Use nouns for resource names (e.g., `/appointments`)
-- Use HTTP methods appropriately:
-  - GET: Retrieve resources
-  - POST: Create resources
-  - PUT: Update resources
-  - DELETE: Remove resources
-- Return appropriate HTTP status codes
-- Use consistent response formats
-- Implement pagination for collection endpoints
-- Support filtering and sorting where appropriate
-
-### API Response Format
-
-```json
-{
-  "data": {
-    "appointmentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "clientId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "clientName": "John Doe",
-    "therapistId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "therapistName": "Jane Smith",
-    "serviceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "serviceName": "Deep Tissue Massage",
-    "startTime": "2023-05-01T14:00:00Z",
-    "endTime": "2023-05-01T15:00:00Z",
-    "status": "Scheduled",
-    "notes": "Client requested focus on lower back"
-  },
-  "metadata": {
-    "timestamp": "2023-04-28T12:34:56Z"
-  }
-}
-```
-
-### Error Response Format
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "One or more validation errors occurred",
-    "details": [
-      {
-        "field": "startTime",
-        "message": "Start time must be in the future"
-      },
-      {
-        "field": "serviceId",
-        "message": "Service not found"
-      }
-    ]
-  },
-  "metadata": {
-    "timestamp": "2023-04-28T12:34:56Z"
-  }
-}
-```
-
-## Authentication & Authorization
-
-### Azure AD B2C Integration
-
-- Custom user flows for sign-up and sign-in
-- Role-based access control
-- JWT token validation
-- Secure token storage in frontend
-
-### Authorization Attributes
-
-```csharp
-[Authorize(Roles = "Admin")]
-[HttpGet("reports/revenue")]
-public async Task<ActionResult<RevenueReportDto>> GetRevenueReport([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
-{
-    // Implementation
-}
-
-[Authorize(Roles = "Admin,Therapist")]
-[HttpGet("clients/{id}")]
-public async Task<ActionResult<ClientDetailsDto>> GetClientDetails(Guid id)
-{
-    // Implementation with additional authorization checks
-    var requestingUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    
-    // Additional authorization logic
-}
-```
-
-## Error Handling
-
-### Exception Handling Strategy
-
-- Use custom exception classes for specific error scenarios
-- Handle exceptions at appropriate levels
-- Log exceptions with contextual information
-- Return user-friendly error messages
-
-Example custom exception:
-
-```csharp
-public class ResourceNotFoundException : Exception
-{
-    public string ResourceType { get; }
-    public string ResourceId { get; }
-    
-    public ResourceNotFoundException(string resourceType, string resourceId)
-        : base($"{resourceType} with ID {resourceId} was not found")
-    {
-        ResourceType = resourceType;
-        ResourceId = resourceId;
-    }
-}
-```
-
-Example exception middleware:
-
-```csharp
-public class ErrorHandlingMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ErrorHandlingMiddleware> _logger;
-    
-    public ErrorHandlingMiddleware(
-        RequestDelegate next,
-        ILogger<ErrorHandlingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-    
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
-        {
-            await _next(context);
-        }
-        catch (Exception ex)
-        {
-            await HandleExceptionAsync(context, ex);
-        }
-    }
-    
-    private Task HandleExceptionAsync(HttpContext context, Exception exception)
-    {
-        _logger.LogError(exception, "An unhandled exception occurred");
-        
-        var statusCode = GetStatusCode(exception);
-        var response = CreateErrorResponse(exception, statusCode);
-        
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = statusCode;
-        
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
-    }
-    
-    private static int GetStatusCode(Exception exception)
-    {
-        return exception switch
-        {
-            ResourceNotFoundException => StatusCodes.Status404NotFound,
-            ValidationException => StatusCodes.Status400BadRequest,
-            UnauthorizedAccessException => StatusCodes.Status403Forbidden,
-            _ => StatusCodes.Status500InternalServerError
-        };
-    }
-    
-    private static object CreateErrorResponse(Exception exception, int statusCode)
-    {
-        return new
-        {
-            error = new
-            {
-                code = GetErrorCode(exception),
-                message = exception.Message,
-                details = GetErrorDetails(exception)
-            },
-            metadata = new
-            {
-                timestamp = DateTime.UtcNow
-            }
-        };
-    }
-    
-    private static string GetErrorCode(Exception exception)
-    {
-        return exception switch
-        {
-            ResourceNotFoundException => "RESOURCE_NOT_FOUND",
-            ValidationException => "VALIDATION_ERROR",
-            UnauthorizedAccessException => "FORBIDDEN",
-            _ => "INTERNAL_SERVER_ERROR"
-        };
-    }
-    
-    private static object GetErrorDetails(Exception exception)
-    {
-        return exception switch
-        {
-            ValidationException validationEx => validationEx.Errors,
-            _ => null
-        };
-    }
-}
-```
-
-## Logging Strategy
-
-- Use structured logging with Serilog
-- Log contextual information (correlation IDs, user IDs)
-- Use appropriate log levels
-- Configure different sinks for different environments
-- Mask sensitive information
-
-Example logging configuration:
-
-```csharp
-public static class LoggingExtensions
-{
-    public static IHostBuilder ConfigureLogging(this IHostBuilder builder)
-    {
-        return builder.UseSerilog((context, config) =>
-        {
-            config
-                .ReadFrom.Configuration(context.Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .Enrich.WithEnvironmentName()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.ApplicationInsights(
-                    context.Configuration["ApplicationInsights:InstrumentationKey"],
-                    TelemetryConverter.Traces);
-        });
-    }
-}
-```
-
-## Performance Considerations
-
-- Use asynchronous programming for I/O-bound operations
-- Implement caching for frequently accessed data
-- Use pagination for large result sets
-- Configure database indexes for common queries
-- Use compression for API responses
-- Optimize frontend bundle size
-
-Example caching implementation:
-
-```csharp
-public class CachedServiceRepository : IServiceRepository
-{
-    private readonly IServiceRepository _repository;
-    private readonly IMemoryCache _cache;
-    private readonly ILogger<CachedServiceRepository> _logger;
-    private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(1);
-    
-    public CachedServiceRepository(
-        IServiceRepository repository,
-        IMemoryCache cache,
-        ILogger<CachedServiceRepository> logger)
-    {
-        _repository = repository;
-        _cache = cache;
-        _logger = logger;
-    }
-    
-    public async Task<Service> GetByIdAsync(Guid id)
-    {
-        var cacheKey = $"Service_{id}";
-        
-        if (_cache.TryGetValue(cacheKey, out Service cachedService))
-        {
-            _logger.LogInformation("Cache hit for service {ServiceId}", id);
-            return cachedService;
-        }
-        
-        _logger.LogInformation("Cache miss for service {ServiceId}", id);
-        var service = await _repository.GetByIdAsync(id);
-        
-        if (service != null)
-        {
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(_cacheDuration);
-                
-            _cache.Set(cacheKey, service, cacheOptions);
-        }
-        
-        return service;
-    }
-    
-    // Implement other repository methods with caching
-}
-```
-
-## Testing Strategy
-
-#### Unit Testing
-
-- Use xUnit for .NET tests
-- Use Jest for React tests
-- Focus on testing business logic
-- Use mocking for external dependencies
-- Aim for high test coverage of core functionality
-- Follow Arrange-Act-Assert pattern
-- Name tests using [MethodUnderTest]_[Scenario]_[ExpectedResult] pattern
-
-### Integration Testing
-
-- Test API endpoints end-to-end
-- Use in-memory database for testing
-- Test authentication and authorization
-- Verify API contracts
-
-Example integration test:
-
-```csharp
-public class AppointmentControllerTests : IClassFixture<WebApplicationFactory<Program>>
-{
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-    
-    public AppointmentControllerTests(WebApplicationFactory<Program> factory)
-    {
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Replace real database with in-memory database
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-                    
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
-                
-                services.AddDbContext<ApplicationDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase("TestDatabase");
-                });
-                
-                // Seed test data
-                var sp = services.BuildServiceProvider();
-                using var scope = sp.CreateScope();
-                var scopedServices = scope.ServiceProvider;
-                var db = scopedServices.GetRequiredService<ApplicationDbContext>();
-                
-                db.Database.EnsureCreated();
-                
-                // Add test data
-                SeedTestData(db);
-            });
-        });
-        
-        _client = _factory.CreateClient();
-    }
-    
-    [Fact]
-    public async Task GetAppointments_ReturnsSuccessAndCorrectContentType()
-    {
-        // Arrange
-        // Add authentication token
-        _client.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Bearer", GenerateTestToken("Admin"));
-            
-        // Act
-        var response = await _client.GetAsync("/api/appointments");
-        
-        // Assert
-        response.EnsureSuccessStatusCode();
-        Assert.Equal("application/json", response.Content.Headers.ContentType.MediaType);
-    }
-    
-    [Fact]
-    public async Task CreateAppointment_WithValidData_ReturnsCreatedResponse()
-    {
-        // Arrange
-        var appointmentDto = new CreateAppointmentDto
-        {
-            ClientId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
-            TherapistId = Guid.Parse("4fa85f64-5717-4562-b3fc-2c963f66afa6"),
-            ServiceId = Guid.Parse("5fa85f64-5717-4562-b3fc-2c963f66afa6"),
-            StartTime = DateTime.UtcNow.AddDays(1)
-        };
-        
-        _client.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Bearer", GenerateTestToken("Client"));
-            
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/appointments", appointmentDto);
-        
-        // Assert
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        
-        var content = await response.Content.ReadFromJsonAsync<AppointmentDto>();
-        Assert.NotNull(content);
-        Assert.Equal(appointmentDto.ClientId, content.ClientId);
-    }
-    
-    private void SeedTestData(ApplicationDbContext context)
-    {
-        // Add test data here
-    }
-    
-    private string GenerateTestToken(string role)
-    {
-        // Generate test JWT token
-        return "test-token";
-    }
-}
-```
-
-### UI Testing
-
-- Use React Testing Library for component tests
-- Test user interactions
-- Verify component rendering
-- Mock API calls
-
-Example UI test:
-
-```javascript
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import AppointmentBooking from './AppointmentBooking';
-import { AppointmentContext } from '../contexts/AppointmentContext';
-import { AuthContext } from '../contexts/AuthContext';
-import { fetchServices, fetchTherapists } from '../api/appointmentApi';
-
-// Mock API calls
-jest.mock('../api/appointmentApi');
-
-describe('AppointmentBooking', () => {
-  const mockServices = [
-    { id: '1', name: 'Deep Tissue Massage', duration: 60, price: 80 },
-    { id: '2', name: 'Swedish Massage', duration: 90, price: 100 }
-  ];
-  
-  const mockTherapists = [
-    { id: '1', name: 'John Doe', specialties: 'Deep Tissue, Sports' },
-    { id: '2', name: 'Jane Smith', specialties: 'Swedish, Relaxation' }
-  ];
-  
-  const mockUser = {
-    id: 'user-123',
-    name: 'Test User',
-    email: 'test@example.com',
-    role: 'Client'
-  };
-  
-  beforeEach(() => {
-    fetchServices.mockResolvedValue(mockServices);
-    fetchTherapists.mockResolvedValue(mockTherapists);
-  });
-  
-  it('renders the booking steps correctly', async () => {
-    render(
-      <AuthContext.Provider value={{ user: mockUser, isAuthenticated: true }}>
-        <AppointmentContext.Provider value={{ appointments: [] }}>
-          <AppointmentBooking />
-        </AppointmentContext.Provider>
-      </AuthContext.Provider>
-    );
-    
-    // Check if initial step is rendered
-    expect(screen.getByText('Book Your Massage Appointment')).toBeInTheDocument();
-    expect(screen.getByText('Select Service')).toBeInTheDocument();
-    
-    // Wait for services to load
-    await waitFor(() => {
-      expect(screen.getByText('Deep Tissue Massage')).toBeInTheDocument();
-      expect(screen.getByText('Swedish Massage')).toBeInTheDocument();
-    });
-    
-    // Select a service
-    fireEvent.click(screen.getByText('Deep Tissue Massage'));
-    fireEvent.click(screen.getByText('Next'));
-    
-    // Check if therapist selection step is rendered
-    await waitFor(() => {
-      expect(screen.getByText('Select Therapist')).toBeInTheDocument();
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-    });
-  });
-  
-  it('validates form inputs before proceeding', async () => {
-    render(
-      <AuthContext.Provider value={{ user: mockUser, isAuthenticated: true }}>
-        <AppointmentContext.Provider value={{ appointments: [] }}>
-          <AppointmentBooking />
-        </AppointmentContext.Provider>
-      </AuthContext.Provider>
-    );
-    
-    // Wait for services to load
-    await waitFor(() => {
-      expect(screen.getByText('Deep Tissue Massage')).toBeInTheDocument();
-    });
-    
-    // Try to proceed without selecting a service
-    fireEvent.click(screen.getByText('Next'));
-    
-    // Button should be disabled
-    expect(screen.getByText('Next')).toBeDisabled();
-  });
-});
-```
-
-### Performance Testing
-
-- Use JMeter or k6 for load testing
-- Identify performance bottlenecks
-- Establish performance baselines
-- Test with realistic user loads
-
-Example k6 load test script:
-
-```javascript
-import http from 'k6/http';
-import { sleep, check } from 'k6';
-
-export const options = {
-  vus: 10,
-  duration: '30s',
-};
-
-export default function () {
-  const baseUrl = 'https://api.massage-booking.example.com';
-  
-  // Get available services
-  const servicesResponse = http.get(`${baseUrl}/api/services`);
-  check(servicesResponse, {
-    'services status is 200': (r) => r.status === 200,
-    'services response is JSON': (r) => r.headers['Content-Type'] === 'application/json',
-  });
-  
-  // Get available therapists
-  const therapistsResponse = http.get(`${baseUrl}/api/therapists`);
-  check(therapistsResponse, {
-    'therapists status is 200': (r) => r.status === 200,
-    'therapists response is JSON': (r) => r.headers['Content-Type'] === 'application/json',
-  });
-  
-  // Get available slots
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-  
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  const nextWeekStr = nextWeek.toISOString().split('T')[0];
-  
-  const availabilityResponse = http.get(
-    `${baseUrl}/api/appointments/available?startDate=${tomorrowStr}&endDate=${nextWeekStr}`
-  );
-  
-  check(availabilityResponse, {
-    'availability status is 200': (r) => r.status === 200,
-    'availability response is JSON': (r) => r.headers['Content-Type'] === 'application/json',
-  });
-  
-  sleep(1);
-}
-```
-
-Example unit test:
-
-```csharp
-public class AppointmentServiceTests
-{
-    private readonly Mock<IAppointmentRepository> _mockRepository;
-    private readonly Mock<IServiceRepository> _mockServiceRepository;
-    private readonly Mock<ITherapistRepository> _mockTherapistRepository;
-    private readonly Mock<ILogger<AppointmentService>> _mockLogger;
-    private readonly AppointmentService _service;
-    
-    public AppointmentServiceTests()
-    {
-        _mockRepository = new Mock<IAppointmentRepository>();
-        _mockServiceRepository = new Mock<IServiceRepository>();
-        _mockTherapistRepository = new Mock<ITherapistRepository>();
-        _mockLogger = new Mock<ILogger<AppointmentService>>();
-        
-        _service = new AppointmentService(
-            _mockRepository.Object,
-            _mockServiceRepository.Object,
-            _mockTherapistRepository.Object,
-            _mockLogger.Object);
-    }
-    
-    [Fact]
-    public async Task CreateAppointment_WithValidData_ReturnsCreatedAppointment()
-    {
-        // Arrange
-        var dto = new CreateAppointmentDto
-        {
-            ClientId = Guid.NewGuid(),
-            TherapistId = Guid.NewGuid(),
-            ServiceId = Guid.NewGuid(),
-            StartTime = DateTime.UtcNow.AddDays(1)
-        };
-        
-        var service = new Service
-        {
-            ServiceId = dto.ServiceId,
-            Duration = 60
-        };
-        
-        _mockServiceRepository
-            .Setup(r => r.GetByIdAsync(dto.ServiceId))
-            .ReturnsAsync(service);
-            
-        _mockTherapistRepository
-            .Setup(r => r.IsAvailableAsync(dto.TherapistId, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .ReturnsAsync(true);
-            
-        _mockRepository
-            .Setup(r => r.AddAsync(It.IsAny<Appointment>()))
-            .Returns(Task.CompletedTask);
-            
-        // Act
-        var result = await _service.CreateAppointmentAsync(dto);
-        
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(dto.ClientId, result.ClientId);
-        Assert.Equal(dto.TherapistId, result.TherapistId);
-        Assert.Equal(dto.ServiceId, result.ServiceId);
-        Assert.Equal(dto.StartTime, result.StartTime);
-        Assert.Equal(dto.StartTime.AddMinutes(service.Duration), result.EndTime);
-        Assert.Equal(AppointmentStatus.Scheduled, result.Status);
-    }
-    
-    [Fact]
-    public async Task CreateAppointment_WithUnavailableTherapist_ThrowsException()
-    {
-        // Arrange
-        var dto = new CreateAppointmentDto
-        {
-            ClientId = Guid.NewGuid(),
-            TherapistId = Guid.NewGuid(),
-            ServiceId = Guid.NewGuid(),
-            StartTime = DateTime.UtcNow.AddDays(1)
-        };
-        
-        var service = new Service
-        {
-            ServiceId = dto.ServiceId,
-            Duration = 60
-        };
-        
-        _mockServiceRepository
-            .Setup(r => r.GetByIdAsync(dto.ServiceId))
-            .ReturnsAsync(service);
-            
-        _mockTherapistRepository
-            .Setup(r => r.IsAvailableAsync(dto.TherapistId, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .ReturnsAsync(false);
-            
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.CreateAppointmentAsync(dto));
-    }
-}
-```
-
-## UI Components
+## Core Components
 
 ### Appointment Calendar View
 
-The system includes a comprehensive appointment calendar view that provides a weekly visualization of appointments and available slots.
+The Appointment Calendar View provides a weekly visualization of appointments and available slots, making it easy for staff to see the schedule at a glance.
 
 ```jsx
-// AppointmentCalendarView component usage example
 <AppointmentCalendarView 
-  serviceId={selectedServiceId} 
-  therapistId={selectedTherapistId}
-  onSlotSelect={handleSlotSelect}
-  initialDate={new Date()}
+  therapistId="guid-here" 
+  startDate="2023-05-01" 
+  onAppointmentClick={handleAppointmentClick}
+  onAvailableSlotClick={handleAvailableSlotClick}
 />
 ```
 
-#### Features
+Features:
+- Color-coded visualization of appointment status (scheduled, completed, cancelled, no-show)
+- Highlighting of available slots
+- Week navigation (previous/next)
+- Responsive design adapting to different screen sizes
+- Built-in appointment booking dialog when clicking available slots
 
-- Weekly calendar view with day columns and hour-based time slots
-- Color-coded appointment status visualization (Scheduled, Completed, Cancelled, NoShow)
-- Available slot highlighting and selection
-- Week navigation with previous/next buttons
-- Responsive design for mobile and desktop
-- Built-in appointment booking dialog
-- Loading and error states with retry capability
-- Filtering by service and therapist
+API Integration:
+- Fetches appointments: `GET /api/appointments/therapist/{therapistId}?startDate={date}&endDate={date}`
+- Fetches available slots: `GET /api/therapists/{therapistId}/availability?startDate={date}&endDate={date}`
+- Creates appointments: `POST /api/appointments`
 
-#### API Integration
-
-The component integrates with the following API endpoints:
-
-1. **Fetch Appointments**: 
-   - `GET /api/appointments?userId={userId}&startDate={startDate}&endDate={endDate}`
-   - Returns scheduled appointments for the specified user and date range
-
-2. **Fetch Available Slots**:
-   - `GET /api/appointments/available?serviceId={serviceId}&therapistId={therapistId}&startDate={startDate}&endDate={endDate}`
-   - Returns available time slots based on service, therapist, and date range
-
-3. **Create Appointment**:
-   - `POST /api/appointments`
-   - Creates a new appointment when a user selects an available slot
-
-#### Data Models
-
+Data Models:
 ```typescript
-// Appointment data model
-interface AppointmentDto {
+interface Appointment {
   appointmentId: string;
   clientId: string;
   clientName: string;
@@ -1070,45 +327,237 @@ interface AppointmentDto {
   therapistName: string;
   serviceId: string;
   serviceName: string;
-  startTime: string; // ISO date string
-  endTime: string;   // ISO date string
-  status: "Scheduled" | "Completed" | "Cancelled" | "NoShow";
+  startTime: string;
+  endTime: string;
+  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'NoShow';
   notes: string;
 }
 
-// Available slot data model
-interface AvailableSlotDto {
-  startTime: string; // ISO date string
-  endTime: string;   // ISO date string
-  therapistId?: string;
-  therapistName?: string;
+interface AvailableSlot {
+  therapistId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
 }
 ```
 
-### API Services
+### Admin Dashboard
 
-The system implements dedicated API service modules for appointment, service, and therapist data:
+The Admin Dashboard provides comprehensive reporting and management features for administrators.
 
-```typescript
-// Appointment API service
-export const fetchAppointments = async (userId, startDate, endDate) => {
-  // Implementation
-};
+#### Dashboard Components
 
-export const fetchAvailableSlots = async (serviceId, therapistId, startDate, endDate) => {
-  // Implementation
-};
+1. **Summary Dashboard**
+   - Display key metrics (appointments, clients, revenue)
+   - Visual charts for appointment trends
+   - Quick access to common actions
 
-export const createAppointment = async (appointmentData) => {
-  // Implementation
-};
+2. **Appointment Reports**
+   - Filter by date range, therapist, or service
+   - View appointments by status (scheduled, completed, cancelled, no-show)
+   - Export reports to CSV
 
-// Service API service
-export const fetchServices = async () => {
-  // Implementation
-};
+3. **Revenue Reports**
+   - Revenue by service type
+   - Revenue by therapist
+   - Period comparisons (daily, weekly, monthly)
+   - Revenue forecasting
 
-// Therapist API service
-export const fetchTherapists = async (filters = {}) => {
-  // Implementation
-};
+4. **User Management**
+   - View and manage clients and therapists
+   - User activity logs
+   - Permission management
+
+API Endpoints:
+- `GET /api/admin/dashboard` - Get summary statistics
+- `GET /api/admin/reports/appointments` - Get appointment reports
+- `GET /api/admin/reports/revenue` - Get revenue reports
+- `GET /api/admin/audit-logs` - Get audit logs
+
+Sample Response for Dashboard Statistics:
+```json
+{
+  "totalAppointmentsThisMonth": 125,
+  "completedAppointmentsThisMonth": 78,
+  "cancelledAppointmentsThisMonth": 12,
+  "upcomingAppointments": 35,
+  "activeTherapistsCount": 8,
+  "totalClientsCount": 230,
+  "dailyAppointmentCounts": [
+    { "date": "2023-05-01", "count": 12 },
+    { "date": "2023-05-02", "count": 15 },
+    // ...more daily counts
+  ]
+}
+```
+
+### Email Notifications
+
+The Email Notification system provides automated communication with clients and therapists about appointments and account activities.
+
+#### Email Service
+
+The `EmailService` is responsible for sending various types of emails:
+
+```csharp
+public interface IEmailService
+{
+    Task<bool> SendAppointmentConfirmationAsync(Appointment appointment, Client client, Therapist therapist, Service service);
+    Task<bool> SendAppointmentReminderAsync(Appointment appointment, Client client, Therapist therapist, Service service);
+    Task<bool> SendAppointmentCancellationAsync(Appointment appointment, Client client, Therapist therapist, Service service);
+    Task<bool> SendTherapistAppointmentNotificationAsync(Appointment appointment, Client client, Therapist therapist, Service service);
+    Task<bool> SendPasswordResetAsync(string email, string resetToken);
+    Task<bool> SendWelcomeEmailAsync(Client client);
+}
+```
+
+Implementation Details:
+- Uses SMTP for email delivery
+- HTML-formatted email templates
+- Configured through `EmailSettings` in appsettings.json
+- Includes tracking and logging of email sending status
+
+Email Settings Configuration:
+```json
+"EmailSettings": {
+  "SmtpServer": "smtp.example.com",
+  "SmtpPort": 587,
+  "SmtpUsername": "notifications@example.com",
+  "SmtpPassword": "SecurePassword123",
+  "EnableSsl": true,
+  "SenderEmail": "notifications@example.com",
+  "SenderName": "Massage Therapy Booking",
+  "WebsiteBaseUrl": "https://massagebooking.example.com"
+}
+```
+
+### Availability Management
+
+The Availability Management system handles therapist availability for scheduling.
+
+#### Availability Repository
+
+```csharp
+public interface IAvailabilityRepository
+{
+    Task<Availability> GetAvailabilityForDateAsync(Guid therapistId, DateTime date);
+    Task<Availability> GetAvailabilityForDayOfWeekAsync(Guid therapistId, DayOfWeek dayOfWeek);
+    Task<Availability> UpsertDateAvailabilityAsync(
+        Guid therapistId, 
+        DateTime date, 
+        bool isAvailable, 
+        TimeSpan? startTime, 
+        TimeSpan? endTime, 
+        TimeSpan? breakStartTime, 
+        TimeSpan? breakEndTime, 
+        string notes);
+    Task<Availability> UpsertDayOfWeekAvailabilityAsync(
+        Guid therapistId,
+        DayOfWeek dayOfWeek,
+        bool isAvailable,
+        TimeSpan? startTime,
+        TimeSpan? endTime,
+        TimeSpan? breakStartTime,
+        TimeSpan? breakEndTime,
+        string notes);
+    Task<bool> DeleteDateAvailabilityAsync(Guid therapistId, DateTime date);
+    Task<bool> DeleteDayOfWeekAvailabilityAsync(Guid therapistId, DayOfWeek dayOfWeek);
+}
+```
+
+Features:
+- Support for both specific date availability and recurring day-of-week patterns
+- Ability to set availability windows including breaks
+- Efficient querying for appointment scheduling
+- Support for therapist-specific availability rules
+
+#### Availability Model
+
+```csharp
+public class Availability
+{
+    public Guid AvailabilityId { get; set; }
+    public Guid TherapistId { get; set; }
+    public virtual Therapist Therapist { get; set; }
+    public DateTime? SpecificDate { get; set; }
+    public DayOfWeek? DayOfWeek { get; set; }
+    public bool IsAvailable { get; set; }
+    public TimeSpan? StartTime { get; set; }
+    public TimeSpan? EndTime { get; set; }
+    public TimeSpan? BreakStartTime { get; set; }
+    public TimeSpan? BreakEndTime { get; set; }
+    public string Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+```
+
+### SOAP Notes
+
+The SOAP Notes feature allows therapists to document client treatments using the SOAP method (Subjective, Objective, Assessment, Plan).
+
+#### SOAP Note Model
+
+```csharp
+public class SoapNote
+{
+    public Guid SoapNoteId { get; set; }
+    public Guid AppointmentId { get; set; }
+    public virtual Appointment Appointment { get; set; }
+    public Guid TherapistId { get; set; }
+    public virtual Therapist Therapist { get; set; }
+    public Guid ClientId { get; set; }
+    public virtual Client Client { get; set; }
+    public string Subjective { get; set; }
+    public string Objective { get; set; }
+    public string Assessment { get; set; }
+    public string Plan { get; set; }
+    public string AreasOfFocus { get; set; }
+    public string TechniquesUsed { get; set; }
+    public int? PressureLevel { get; set; }
+    public bool IsFinalized { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public DateTime? FinalizedAt { get; set; }
+}
+```
+
+#### SOAP Note Repository
+
+```csharp
+public interface ISoapNoteRepository
+{
+    Task<SoapNote> GetByIdAsync(Guid soapNoteId);
+    Task<SoapNote> GetByAppointmentIdAsync(Guid appointmentId);
+    Task<List<SoapNote>> GetByClientIdAsync(Guid clientId);
+    Task<List<SoapNote>> GetByTherapistIdAsync(Guid therapistId);
+    Task<SoapNote> AddAsync(SoapNote soapNote);
+    Task<SoapNote> UpdateAsync(SoapNote soapNote);
+    Task<bool> FinalizeAsync(Guid soapNoteId);
+    Task<bool> DeleteAsync(Guid soapNoteId);
+}
+```
+
+#### SOAP Notes Controller
+
+The `SoapNotesController` provides API endpoints for SOAP note management:
+
+- `GET /api/soapnotes/{id}` - Get a specific SOAP note
+- `GET /api/soapnotes/appointment/{appointmentId}` - Get SOAP note for an appointment
+- `GET /api/soapnotes/client/{clientId}` - Get all SOAP notes for a client
+- `GET /api/soapnotes/therapist/{therapistId}` - Get all SOAP notes by a therapist
+- `POST /api/soapnotes` - Create a new SOAP note
+- `PUT /api/soapnotes/{id}` - Update an existing SOAP note
+- `POST /api/soapnotes/{id}/finalize` - Finalize a SOAP note
+- `DELETE /api/soapnotes/{id}` - Delete a SOAP note
+
+Features:
+- Structured documentation with SOAP format
+- Support for additional treatment details (techniques, pressure level)
+- Note finalization to prevent further edits
+- Access controls (therapists can only view their own clients' notes)
+
+## API Documentation
+
+API documentation is available through Swagger UI at `/swagger` when running the application in development mode. This provides interactive documentation for all available endpoints, including request parameters, response schemas, and authentication requirements.

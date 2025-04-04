@@ -73,6 +73,117 @@ The appointment booking functionality has been implemented using ASP.NET Core an
    - View appointment history
    - Rebook previous services
 
+5. **Appointment Calendar View**
+   - Weekly visualization of appointments and available slots
+   - Color-coded appointment status visualization
+   - Available slot highlighting and integrated booking
+   - Week navigation with responsive design
+
+## Availability Management
+
+The availability management system allows therapists to set their working hours and manage their schedule:
+
+### Key Components
+
+#### Models
+- `Availability`: Entity representing therapist availability for specific dates or recurring days
+- Properties include:
+  - Date-specific or recurring day-of-week settings
+  - Work hours (start/end times)
+  - Break times
+  - Availability status
+
+#### Repository Layer
+- `IAvailabilityRepository`: Interface for availability data operations
+- `AvailabilityRepository`: Implementation using Entity Framework Core
+- Key methods:
+  - Get availability for specific dates or days of week
+  - Upsert (create/update) availability settings
+  - Delete availability records
+
+#### Integration with Booking
+- Appointment booking system checks against therapist availability
+- Prevents booking outside of working hours
+- Accounts for breaks and time off
+
+## SOAP Notes System
+
+The SOAP Notes feature allows therapists to document client treatments following the standardized SOAP method:
+
+### Key Components
+
+#### Models
+- `SoapNote`: Entity for treatment documentation
+- Properties include:
+  - Subjective (client reported symptoms/concerns)
+  - Objective (therapist observations)
+  - Assessment (therapist's evaluation)
+  - Plan (treatment recommendations)
+  - Areas of focus, techniques used, and pressure level
+  - Finalization status
+
+#### Repository Layer
+- `ISoapNoteRepository`: Interface for SOAP note data operations
+- `SoapNoteRepository`: Implementation using Entity Framework Core
+- Operations include:
+  - Create, read, update, delete notes
+  - Get notes by appointment, client, or therapist
+  - Finalize notes to prevent further edits
+
+#### API Layer
+- `SoapNotesController`: Endpoints for managing SOAP notes
+- Supports all CRUD operations with appropriate access controls
+
+## Admin Dashboard
+
+The comprehensive admin dashboard provides insights and management tools:
+
+### Key Components
+
+#### Dashboard Features
+- Summary statistics (appointments, clients, revenue)
+- Visual charts for appointment trends
+- Quick access to common actions
+
+#### Reporting Tools
+- Appointment reports by date, therapist, or service
+- Revenue reports with service and therapist breakdowns
+- Period comparisons and export capabilities
+
+#### User Management
+- Client and therapist profile management
+- Activity logging and permissions management
+
+#### API Layer
+- `AdminController`: Endpoints for dashboard data and reports
+- Data aggregation and reporting logic
+
+## Email Notification System
+
+The email notification system ensures timely communication with clients and therapists:
+
+### Key Components
+
+#### Email Service
+- `IEmailService`: Interface for email operations
+- `EmailService`: Implementation with SMTP integration
+- Email types:
+  - Appointment confirmation
+  - Appointment reminders
+  - Cancellation notifications
+  - Welcome emails
+  - Password reset
+
+#### Configuration
+- SMTP settings in appsettings.json
+- HTML email templates
+- Tracking of email sending status
+
+#### Integration Points
+- Triggered automatically by appointment events
+- User registration flow
+- Password reset process
+
 ## Technology Stack
 
 - ASP.NET Core 6.0
@@ -99,6 +210,10 @@ The appointment booking functionality has been implemented using ASP.NET Core an
 - **As a client, I want to rebook previous services easily so I don't have to enter all the details again**
 - **As a therapist, I want to see my upcoming appointments for the day/week**
 - **As a therapist, I want to view client information before appointments so I can prepare**
+- **As a therapist, I want to manage my availability so clients can only book when I'm working**
+- **As a therapist, I want to document treatments using SOAP notes to track client progress**
+- **As an admin, I want to see business metrics and reports to make informed decisions**
+- **As a user, I want to receive email notifications about appointments to stay informed**
 
 ## Project Overview
 
@@ -110,7 +225,9 @@ This system allows massage therapists to manage their practice efficiently with 
 - SOAP notes and intake forms
 - Therapist availability management
 - Service management
-- Email/SMS notifications
+- Email notifications
+- Admin dashboard with reporting
+- User management system
 
 ## Technology Stack
 
