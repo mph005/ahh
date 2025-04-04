@@ -150,6 +150,7 @@ The first phase focuses on establishing the essential booking and client managem
   - Configure structured logging
   - Add performance monitoring
   - Create dashboard in Azure portal
+  - Implement alerting for critical system events
   - Estimated time: 4 hours
 
 - [x] **Task 1.21**: Add Basic SOAP Notes
@@ -160,17 +161,90 @@ The first phase focuses on establishing the essential booking and client managem
   - Implement note finalization/locking ✅
   - Estimated time: 8 hours
 
+- [x] **Task 1.22**: Infrastructure as Code (Terraform)
+  - Create modular Terraform structure ✅
+  - Implement networking, compute, database modules ✅
+  - Add security and monitoring resources ✅
+  - Configure environment-specific deployments ✅
+  - Create documentation and examples ✅
+  - Estimated time: 12 hours
+
+## Project Status
+
+We have completed 21 out of 22 tasks in Phase 1, representing approximately 95% completion. The only remaining task is implementing logging and monitoring (Task 1.20).
+
+### Recently Completed Tasks
+
+1. **Appointment Calendar View (Task 1.17)** - Implemented a comprehensive weekly calendar visualization of appointments and available slots with color-coding for appointment status and integrated booking.
+
+2. **Admin Dashboard (Task 1.18)** - Created a comprehensive admin dashboard with appointment statistics, revenue reporting, and user management interfaces.
+
+3. **Email Notifications (Task 1.19)** - Implemented email service for sending appointment confirmations, reminders, and administrative notifications.
+
+4. **SOAP Notes (Task 1.21)** - Added the SOAP notes feature for therapists to document client treatments, including support for creating, editing, and finalizing treatment notes.
+
+5. **Availability Management** - Implemented the repository for managing therapist availability with support for both specific dates and recurring day-of-week patterns.
+
+6. **Infrastructure as Code (Task 1.22)** - Created a comprehensive Terraform implementation for automating the deployment and management of all Azure infrastructure components, including modular structures for networking, database, compute, security, and monitoring resources.
+
 ## Phase 2 Preview Tasks (Future Development)
 
-These tasks are planned for Phase 2 and are not part of the current development cycle.
+These tasks are planned for Phase 2 and will be the next development focus after completing Task 1.20.
 
-- Implement intake forms for clients
-- Add payment processing integration
-- Create membership and package management
-- Develop advanced reporting and analytics
-- Build mobile applications
-- Implement marketing features (email campaigns, promotions)
-- Add inventory management for products
+### High Priority Phase 2 Tasks
+
+- [ ] **Task 2.1**: Advanced Analytics Dashboard
+  - Implement therapist performance metrics
+  - Create revenue analysis charts
+  - Add customer retention visualization
+  - Display appointment type distribution
+  - Estimated time: 8 hours
+
+- [ ] **Task 2.2**: Client Intake Forms
+  - Create customizable form templates
+  - Implement form builder for administrators
+  - Add secure storage for client responses
+  - Integrate with appointment workflow
+  - Estimated time: 12 hours
+
+- [ ] **Task 2.3**: Payment Processing Integration
+  - Integrate with Stripe/PayPal APIs
+  - Implement payment capture for bookings
+  - Add invoice generation
+  - Create refund processing capability
+  - Estimated time: 16 hours
+
+### Medium Priority Phase 2 Tasks
+
+- [ ] **Task 2.4**: Membership and Package Management
+  - Create membership models and repositories
+  - Implement service package bundles
+  - Add subscription billing integration
+  - Develop member dashboard features
+  - Estimated time: 10 hours
+
+- [ ] **Task 2.5**: Mobile Application Development
+  - Create React Native app structure
+  - Implement authentication
+  - Add appointment management
+  - Integrate push notifications
+  - Estimated time: 20 hours
+
+### Low Priority Phase 2 Tasks
+
+- [ ] **Task 2.6**: Marketing Features
+  - Implement email campaign system
+  - Add promotion code functionality
+  - Create client referral tracking
+  - Develop social media integration
+  - Estimated time: 8 hours
+
+- [ ] **Task 2.7**: Inventory Management
+  - Create product catalog
+  - Implement inventory tracking
+  - Add low stock alerts
+  - Integrate with point of sale
+  - Estimated time: 12 hours
 
 ## Technical Debt Tasks
 
@@ -191,6 +265,13 @@ These tasks are planned for Phase 2 and are not part of the current development 
   - Review and optimize LINQ queries
   - Implement caching for frequent queries
   - Estimated time: 6 hours
+
+- [ ] **TD-4**: Infrastructure Documentation
+  - Document Terraform deployment process
+  - Create network architecture diagrams
+  - Document security controls and compliance
+  - Create environment management guidelines
+  - Estimated time: 4 hours
 
 ## Development Process
 
@@ -231,42 +312,3 @@ Task 1.9 → Task 1.14, 1.16
 Task 1.6, 1.8 → Task 1.17
 Task 1.7, 1.6, 1.8 → Task 1.18
 ```
-
-## Project Status
-
-We have completed 20 out of 21 tasks in Phase 1, representing approximately 95% completion. The only remaining task is implementing logging and monitoring (Task 1.20).
-
-### Recently Completed Tasks
-
-1. **Appointment Calendar View (Task 1.17)** - Implemented a comprehensive weekly calendar visualization of appointments and available slots with color-coding for appointment status and integrated booking.
-
-2. **Admin Dashboard (Task 1.18)** - Created a comprehensive admin dashboard with appointment statistics, revenue reporting, and user management interfaces.
-
-3. **Email Notifications (Task 1.19)** - Implemented email service for sending appointment confirmations, reminders, and administrative notifications.
-
-4. **SOAP Notes (Task 1.21)** - Added the SOAP notes feature for therapists to document client treatments, including support for creating, editing, and finalizing treatment notes.
-
-5. **Availability Management** - Implemented the repository for managing therapist availability with support for both specific dates and recurring day-of-week patterns.
-
-### Remaining Tasks
-
-Only Task 1.20 (Implement Logging and Monitoring) remains to be completed from Phase 1. This task includes:
-- Setting up Application Insights
-- Configuring structured logging
-- Adding performance monitoring
-- Creating a dashboard in the Azure portal
-
-## Estimated Timeline
-
-- Database and Authentication (Tasks 1.1-1.5): COMPLETED
-- Core API Development (Tasks 1.6-1.10): COMPLETED
-- Frontend Foundation (Tasks 1.11-1.15): COMPLETED
-- Additional Features (Tasks 1.16-1.21): 5/6 COMPLETED
-
-## Resources
-
-- [Technical Specifications](../docs/technical.md)
-- [Architecture Document](../docs/architecture.md)
-- [Azure Documentation](https://docs.microsoft.com/en-us/azure/)
-- [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
-- [React Documentation](https://reactjs.org/docs/getting-started.html)

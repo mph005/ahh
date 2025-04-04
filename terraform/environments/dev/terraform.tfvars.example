@@ -1,0 +1,26 @@
+# General
+prefix      = "massage"
+environment = "dev"
+location    = "eastus"
+
+# Security
+tenant_id                        = "00000000-0000-0000-0000-000000000000" # Azure AD tenant ID
+devops_service_principal_object_id = "00000000-0000-0000-0000-000000000000" # Object ID of DevOps service principal
+allowed_ips                      = ["123.123.123.123"] # IP addresses allowed to access Key Vault
+security_alert_emails            = ["admin@example.com", "security@example.com"]
+
+# Database
+sql_administrator_login          = "sqladmin" # SQL admin username
+sql_administrator_login_password = "P@ssw0rd123!" # SQL admin password (use Key Vault in production)
+sql_ad_admin_login_username      = "aadadmin" # Azure AD admin username
+sql_ad_admin_object_id           = "00000000-0000-0000-0000-000000000000" # Object ID of Azure AD admin
+sql_db_sku                       = "S0" # SQL DB SKU
+sql_db_max_size_gb               = 4 # SQL DB max size in GB
+
+# Compute
+app_service_sku                  = "P1v2" # App Service Plan SKU
+api_cors_allowed_origins         = ["https://massage-dev-frontend.azurestaticapps.net"] # CORS origins
+azuread_domain                   = "example.onmicrosoft.com" # Azure AD domain
+
+# Monitoring
+alert_email                      = "admin@example.com" # Email for alerts 

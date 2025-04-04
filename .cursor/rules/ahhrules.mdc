@@ -52,14 +52,82 @@ alwaysApply: true
 6.  **Leverage Strengths:** Use the AI for tasks it excels at (boilerplate generation, refactoring specific patterns, finding syntax errors, generating test cases) but maintain human oversight for complex logic, architecture, and security.
 7.  **Incremental Interaction:** Break down complex tasks into smaller steps for the AI. Review and confirm each step before proceeding.
 8.  **Standard Check-in (for AI on large tasks):** Before providing significant code suggestions:
-    *   "Confirming understanding: I've reviewed [specific document/previous context]. The goal is [task goal], adhering to [key pattern/constraint]. Proceeding with [planned step]." (This replaces the more robotic "STOP AND VERIFY").
+    *   "Confirming understanding: I've reviewed [specific document/previous context]. The goal is [task goal], adhering to [key pattern/constraint]. Proceeding with [planned step]."
+
+## 🏗️ Infrastructure & Cloud Development (Terraform & Azure)
+
+### 1. Code Organization
+```hcl
+# Good Example
+modules/
+  ├── networking/
+  │   ├── main.tf
+  │   ├── variables.tf
+  │   └── outputs.tf
+  └── compute/
+      ├── main.tf
+      ├── variables.tf
+      └── outputs.tf
+```
+
+- Use a modular structure with separate directories for different environments (dev, staging, prod)
+- Keep modules reusable and focused on a single responsibility
+- Use version control for all configurations
+- Implement a consistent naming convention across all resources
+
+### 2. State Management
+```hcl
+# Good Example
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "tfstate"
+    storage_account_name = "tfstate12345"
+    container_name      = "tfstate"
+    key                 = "prod.terraform.tfstate"
+  }
+}
+```
+
+- Always use remote state storage (Azure Storage Account recommended)
+- Enable state locking to prevent concurrent modifications
+- Regularly backup your state files
+- Never commit state files to version control
+
+### 3. Security & Compliance
+- Use Azure Key Vault for sensitive values
+- Implement least privilege access control
+- Use managed identities where possible
+- Enable Azure Defender for Cloud
+- Implement Azure Policy for compliance
+- Use Azure AD for authentication
+- Enable diagnostic logging for all resources
+
+### 4. Resource Management
+- Use `count` and `for_each` for resource iteration
+- Implement proper resource dependencies
+- Use data sources to reference existing resources
+- Tag all resources appropriately
+- Follow Azure naming conventions
+- Include environment prefix (dev, stg, prod)
+- Include resource type in the name
+- Use lowercase with hyphens for consistency
+
+### 5. Cost Optimization & Monitoring
+- Use Azure Reservations for long-running resources
+- Implement auto-shutdown for non-production resources
+- Use Azure Cost Management for monitoring
+- Tag resources for cost allocation
+- Enable Azure Monitor for all resources
+- Set up proper alerting
+- Implement backup strategies
+- Regular security and compliance reviews
 
 ## ✨ Code Quality & Style
 
 1.  **TypeScript Guidelines:** Use strict typing (avoid `any`). Document complex logic or public APIs with JSDoc.
 2.  **Readability & Maintainability:** Write clean, well-organized code.
 3.  **Small Files & Components:**
-    *   Keep files under **300 lines**. Refactor proactively.
+    *   Keep files as small as reasonable. Refactor proactively.
     *   Break down large React components into smaller, single-responsibility components.
 4.  **Avoid Duplication (DRY):** Actively look for and reuse existing functionality. Refactor to eliminate duplication.
 5.  **No Bazel:** Bazel is not permitted. Use project-specified build tools.
@@ -115,4 +183,19 @@ alwaysApply: true
 ## 📄 Documentation Maintenance
 
 1.  **Update Docs:** If code changes impact architecture, technical decisions, established patterns, or task status, update the relevant documentation (`README.md`, `docs/architecture.md`, `docs/technical.md`, `tasks/tasks.md`, `docs/status.md`).
-2.  **Keep Rules Updated:** This `.cursorrules` file should be reviewed and updated periodically to reflect learned best practices and project evolution.
+2.  **Keep Rules Updated:** This cursor rules file should be reviewed and updated periodically to reflect learned best practices and project evolution.
+
+## ⚠️ Common Pitfalls to Avoid
+
+> **Critical**: These are the most common mistakes that should be avoided at all costs:
+
+1. Not using remote state management
+2. Hardcoding sensitive values
+3. Not implementing proper error handling
+4. Not following Azure naming conventions
+5. Not implementing proper security measures
+6. Not using proper resource tagging
+7. Not implementing proper monitoring
+8. Not following the principle of least privilege
+9. Not implementing proper backup strategies
+10. Not maintaining proper documentation 

@@ -1,6 +1,6 @@
 # Deployment Guide for Massage Therapy Booking System
 
-This document provides step-by-step instructions for deploying the Massage Therapy Booking System to Microsoft Azure. The system consists of an ASP.NET Core Web API backend and a React frontend.
+This document provides step-by-step instructions for deploying the Massage Therapy Booking System to Microsoft Azure using Terraform as the Infrastructure as Code (IaC) solution. The system consists of an ASP.NET Core Web API backend and a React frontend.
 
 ## Prerequisites
 
@@ -8,109 +8,187 @@ Before you begin, ensure you have the following:
 
 - An active Azure subscription
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) installed and configured
+- [Terraform](https://www.terraform.io/downloads.html) (v1.1.0+) installed
 - [.NET 7 SDK](https://dotnet.microsoft.com/download/dotnet/7.0) installed
 - [Node.js](https://nodejs.org/) (v16+) and [npm](https://www.npmjs.com/) (v8+) installed
 - [Git](https://git-scm.com/) installed
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or [Visual Studio Code](https://code.visualstudio.com/)
 - [Entity Framework Core CLI tools](https://docs.microsoft.com/en-us/ef/core/cli/dotnet)
 
-## Azure Resources Overview
+## Infrastructure Overview
 
-The deployment requires the following Azure resources:
+The Terraform configuration creates the following Azure resources:
 
-1. **Azure SQL Database** - For storing application data
-2. **Azure App Service** - For hosting the ASP.NET Core Web API
-3. **Azure Static Web Apps** - For hosting the React frontend
-4. **Azure Active Directory B2C** - For authentication and user management
-5. **Azure Application Insights** - For monitoring and diagnostics
-6. **Azure Key Vault** - For secrets management
+1. **Networking** - Virtual Network, Subnets, NSGs, and Private DNS zones
+2. **Database** - Azure SQL Database with private endpoints
+3. **Compute** - App Service for API, Static Web App for frontend
+4. **Security** - Key Vault, Azure AD B2C, Storage for security features
+5. **Monitoring** - Application Insights, Log Analytics Workspace, Diagnostics
 
-## Step 1: Set Up Azure Resources
+## Terraform Structure
 
-### Azure SQL Database
+The Terraform code is organized into modules for better maintainability:
 
-1. **Create a SQL Server and Database:**
+```
+terraform/
+├── modules/                    # Reusable infrastructure modules
+│   ├── networking/             # Network resources (VNet, Subnet, NSG)
+│   ├── database/               # Database resources (Azure SQL)
+│   ├── compute/                # Compute resources (App Service, Static Web App)
+│   ├── security/               # Security resources (Key Vault, AAD B2C)
+│   └── monitoring/             # Monitoring resources (App Insights, Log Analytics)
+├── environments/               # Environment-specific configurations
+│   ├── dev/                    # Development environment
+│   ├── staging/                # Staging environment (future)
+│   └── prod/                   # Production environment (future)
+└── provider.tf                 # Provider configuration
+```
+
+## Step 1: Set Up Azure Authentication
+
+1. **Login to Azure**:
    ```bash
-   # Login to Azure
    az login
-
-   # Create a resource group
-   az group create --name massage-booking-rg --location eastus
-
-   # Create SQL Server
-   az sql server create --name massage-booking-sql --resource-group massage-booking-rg \
-     --location eastus --admin-user dbadmin --admin-password "YourSecurePassword123!"
-
-   # Configure firewall to allow Azure services
-   az sql server firewall-rule create --name AllowAzureServices \
-     --server massage-booking-sql --resource-group massage-booking-rg \
-     --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-
-   # Create database
-   az sql db create --name MassageBookingDb --resource-group massage-booking-rg \
-     --server massage-booking-sql --service-objective S0
    ```
 
-2. **Get the connection string:**
+2. **Set Active Subscription** (if you have multiple):
    ```bash
-   az sql db show-connection-string --name MassageBookingDb --server massage-booking-sql \
-     --client ado.net
+   az account set --subscription "Your Subscription Name or ID"
    ```
-   Note: Replace `{your_username}` and `{your_password}` with your actual SQL Server credentials.
 
-### Azure Key Vault
+## Step 2: Prepare Terraform State Storage
 
-1. **Create a Key Vault:**
+For production use, it's recommended to use remote state storage in Azure:
+
+1. **Create a Resource Group for Terraform State**:
    ```bash
-   az keyvault create --name massage-booking-kv --resource-group massage-booking-rg \
-     --location eastus
+   az group create --name tfstate --location eastus
    ```
 
-2. **Store the database connection string:**
+2. **Create a Storage Account**:
    ```bash
-   az keyvault secret set --vault-name massage-booking-kv --name "SqlConnectionString" \
-     --value "Your-Connection-String-Here"
+   az storage account create --name massagebookingtfstate --resource-group tfstate --sku Standard_LRS --encryption-services blob
    ```
 
-### Azure Active Directory B2C
+3. **Create a Container**:
+   ```bash
+   az storage container create --name tfstate --account-name massagebookingtfstate
+   ```
 
-1. **Create an Azure AD B2C tenant** through the Azure portal:
-   - Go to Azure portal > Create a resource > Azure Active Directory B2C
-   - Follow the wizard to create a new tenant or link to an existing one
+4. **Configure Remote State** (update the `provider.tf` file):
+   ```hcl
+   terraform {
+     backend "azurerm" {
+       resource_group_name  = "tfstate"
+       storage_account_name = "massagebookingtfstate"
+       container_name       = "tfstate"
+       key                  = "terraform.tfstate"
+     }
+   }
+   ```
 
-2. **Register your application:**
-   - In the Azure AD B2C tenant, go to "App registrations"
-   - Register a new application for the Web API
-   - Configure API permissions, authentication settings, and app roles
+## Step 3: Configure Environment Variables
 
-3. **Configure user flows:**
-   - Create sign-up and sign-in policies
-   - Configure password reset flows
-   - Set up profile editing policies
+1. **Navigate to the Environment Directory**:
+   ```bash
+   cd terraform/environments/dev
+   ```
 
-## Step 2: Configure and Deploy the Backend API
+2. **Create Terraform Variables File**:
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   ```
 
-### Update Application Settings
+3. **Edit Variables**: Customize the `terraform.tfvars` file with your specific configuration:
+   ```hcl
+   # General
+   prefix      = "massage"
+   environment = "dev"
+   location    = "eastus"
+   tags = {
+     Environment = "Development"
+     Project     = "Massage Booking System"
+     Owner       = "Your Team"
+   }
 
-1. **Create a production appsettings file:**
+   # Networking
+   vnet_address_space    = ["10.0.0.0/16"]
+   api_subnet_cidr       = "10.0.1.0/24"
+   db_subnet_cidr        = "10.0.2.0/24"
+   allowed_ip_addresses  = ["your-office-ip/32"]
+
+   # Database
+   sql_admin_username    = "sqladmin"
+   sql_admin_password    = "YourSecureP@ssw0rd" # Better to use Key Vault
+
+   # Compute
+   app_service_sku       = "P1v2"
+   static_web_app_sku    = "Standard"
+
+   # Security
+   tenant_id = "your-tenant-id"
+   devops_service_principal_object_id = "your-sp-object-id"
+
+   # Monitoring
+   log_retention_days    = 30
+   alert_email           = "your-email@example.com"
+   ```
+
+## Step 4: Deploy Infrastructure with Terraform
+
+1. **Initialize Terraform**:
+   ```bash
+   terraform init
+   ```
+
+2. **Validate Configuration**:
+   ```bash
+   terraform validate
+   ```
+
+3. **Plan Deployment**:
+   ```bash
+   terraform plan -out=tfplan
+   ```
+
+4. **Apply Changes**:
+   ```bash
+   terraform apply tfplan
+   ```
+
+5. **Retrieve Outputs**:
+   ```bash
+   terraform output
+   ```
+
+   Save important outputs like connection strings, endpoints, and keys.
+
+## Step 5: Database Migration
+
+1. **Configure the Connection String**:
+   Use the SQL connection string from the Terraform outputs.
+
+2. **Apply Migrations**:
+   ```bash
+   # Use Entity Framework Core
+   dotnet ef database update --connection "your-connection-string-from-outputs"
+   ```
+
+## Step 6: Configure and Deploy the Backend API
+
+1. **Update Application Settings**:
+   Create a production `appsettings.json` file with values from Terraform outputs:
    ```json
-   // appsettings.Production.json
    {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=tcp:massage-booking-sql.database.windows.net,1433;Database=MassageBookingDb;..."
-     },
      "AzureAdB2C": {
        "Instance": "https://yourtenant.b2clogin.com/",
        "Domain": "yourtenant.onmicrosoft.com",
-       "ClientId": "your-client-id",
+       "ClientId": "your-client-id-from-terraform",
        "SignUpSignInPolicyId": "B2C_1_signupsignin",
        "TenantId": "your-tenant-id"
      },
-     "ApplicationInsights": {
-       "ConnectionString": "your-app-insights-connection-string"
-     },
      "KeyVault": {
-       "Endpoint": "https://massage-booking-kv.vault.azure.net/"
+       "Endpoint": "https://your-keyvault-name-from-terraform.vault.azure.net/"
      },
      "Logging": {
        "LogLevel": {
@@ -122,359 +200,143 @@ The deployment requires the following Azure resources:
    }
    ```
 
-2. **Configure the application to use Azure Key Vault** in `Program.cs` or `Startup.cs`.
-
-### Prepare the Database
-
-1. **Update database schema:**
+2. **Deploy the API**:
    ```bash
-   # Generate a SQL script from migrations
-   dotnet ef migrations script --output ./migrations-script.sql --idempotent
-   ```
-
-2. **Apply migrations to Azure SQL Database:**
-   ```bash
-   # Option 1: Use Entity Framework Core
-   dotnet ef database update --connection "your-connection-string"
-
-   # Option 2: Execute the generated SQL script using Azure CLI
-   az sql db execute -g massage-booking-rg -s massage-booking-sql -d MassageBookingDb \
-     -f ./migrations-script.sql
-   ```
-
-### Deploy the Web API
-
-1. **Create an App Service Plan:**
-   ```bash
-   az appservice plan create --name massage-booking-plan --resource-group massage-booking-rg \
-     --sku S1 --is-linux
-   ```
-
-2. **Create an App Service:**
-   ```bash
-   az webapp create --name massage-booking-api --resource-group massage-booking-rg \
-     --plan massage-booking-plan --runtime "DOTNET|7.0"
-   ```
-
-3. **Configure app settings:**
-   ```bash
-   az webapp config appsettings set --name massage-booking-api \
-     --resource-group massage-booking-rg --settings \
-     ASPNETCORE_ENVIRONMENT="Production" \
-     AZURE_KEY_VAULT_ENDPOINT="https://massage-booking-kv.vault.azure.net/" \
-     WEBSITE_RUN_FROM_PACKAGE=1
-   ```
-
-4. **Set up managed identity for Key Vault access:**
-   ```bash
-   # Enable managed identity
-   az webapp identity assign --name massage-booking-api --resource-group massage-booking-rg
-
-   # Get the principal ID
-   principalId=$(az webapp identity show --name massage-booking-api \
-     --resource-group massage-booking-rg --query principalId --output tsv)
-
-   # Grant access to Key Vault
-   az keyvault set-policy --name massage-booking-kv --object-id $principalId \
-     --secret-permissions get list
-   ```
-
-5. **Deploy the API:**
-   ```bash
-   # Option 1: Deploy from local machine
+   # Build and package the application
    dotnet publish -c Release
    cd bin/Release/net7.0/publish
    zip -r site.zip .
-   az webapp deployment source config-zip --name massage-booking-api \
-     --resource-group massage-booking-rg --src site.zip
-
-   # Option 2: Set up continuous deployment with GitHub Actions or Azure DevOps
+   
+   # Deploy to App Service
+   az webapp deployment source config-zip --name your-api-name-from-terraform \
+     --resource-group your-resource-group-from-terraform --src site.zip
    ```
 
-6. **Enable application insights:**
-   ```bash
-   # Create App Insights resource
-   az monitor app-insights component create --app massage-booking-insights \
-     --resource-group massage-booking-rg --location eastus --kind web \
-     --application-type web
+## Step 7: Configure and Deploy the Frontend
 
-   # Get the instrumentation key
-   instrumentationKey=$(az monitor app-insights component show --app massage-booking-insights \
-     --resource-group massage-booking-rg --query instrumentationKey --output tsv)
-
-   # Configure the web app
-   az webapp config appsettings set --name massage-booking-api \
-     --resource-group massage-booking-rg --settings \
-     APPINSIGHTS_INSTRUMENTATIONKEY=$instrumentationKey
+1. **Update Environment Variables**:
+   Create a `.env.production` file with values from Terraform outputs:
    ```
-
-## Step 3: Configure and Deploy the Frontend
-
-### Build the React Application
-
-1. **Update environment variables:**
-   Create a `.env.production` file in your React project:
-   ```
-   REACT_APP_API_BASE_URL=https://massage-booking-api.azurewebsites.net/api
-   REACT_APP_AUTH_CLIENT_ID=your-b2c-client-id
+   REACT_APP_API_BASE_URL=https://your-api-url-from-terraform/api
+   REACT_APP_AUTH_CLIENT_ID=your-b2c-client-id-from-terraform
    REACT_APP_AUTH_AUTHORITY=https://yourtenant.b2clogin.com/yourtenant.onmicrosoft.com/B2C_1_signupsignin
-   REACT_APP_AUTH_REDIRECT_URI=https://massage-booking-client.azurestaticapps.net
+   REACT_APP_AUTH_REDIRECT_URI=https://your-frontend-url-from-terraform
    ```
 
-2. **Build the production version:**
+2. **Build and Deploy**:
    ```bash
+   # Build the frontend
    cd src/massage-booking-client
    npm install
    npm run build
+   
+   # Deploy to Static Web App
+   # The Static Web App deployment is usually handled through GitHub Actions
+   # that were configured by Terraform
    ```
 
-### Deploy to Azure Static Web Apps
+## Step 8: Infrastructure Maintenance
 
-1. **Create Static Web App:**
+### Updating Infrastructure
+
+1. **Make Changes to Terraform Files**:
+   Update module configurations or variables as needed.
+
+2. **Plan and Apply Changes**:
    ```bash
-   az staticwebapp create --name massage-booking-client --resource-group massage-booking-rg \
-     --location "eastus2" --source https://github.com/yourusername/massage-booking-system \
-     --branch main --app-location "src/massage-booking-client" --output-location "build" \
-     --login-with-github
+   terraform plan -out=tfplan
+   terraform apply tfplan
    ```
 
-2. **Configure API proxy (optional):**
-   Create a `staticwebapp.config.json` file in your React project's public directory:
-   ```json
-   {
-     "routes": [
-       {
-         "route": "/api/*",
-         "methods": ["GET", "POST", "PUT", "DELETE"],
-         "allowedRoles": ["anonymous", "authenticated"],
-         "backendUri": "https://massage-booking-api.azurewebsites.net/api/*"
-       }
-     ],
-     "navigationFallback": {
-       "rewrite": "/index.html",
-       "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*"]
-     },
-     "responseOverrides": {
-       "404": {
-         "rewrite": "/index.html",
-         "statusCode": 200
-       }
-     }
-   }
-   ```
+### Scaling Resources
 
-3. **Set up GitHub Actions for continuous deployment:**
-   - Azure Static Web Apps automatically creates a GitHub Actions workflow
-   - Customize the workflow in `.github/workflows/` as needed
+Adjust the following variables in your `terraform.tfvars` file:
 
-## Step 4: Configure CORS, Custom Domain, and SSL
+```hcl
+# Scaling App Service
+app_service_sku = "P2v2"  # Increase size
 
-### Configure CORS on the API
-
-1. **Enable CORS for your Static Web App:**
-   ```bash
-   az webapp cors add --name massage-booking-api --resource-group massage-booking-rg \
-     --allowed-origins "https://massage-booking-client.azurestaticapps.net"
-   ```
-
-### Add Custom Domains
-
-1. **For App Service:**
-   ```bash
-   az webapp config hostname add --webapp-name massage-booking-api \
-     --resource-group massage-booking-rg --hostname api.yourdomain.com
-   ```
-
-2. **For Static Web App:**
-   - In the Azure Portal, navigate to your Static Web App
-   - Go to "Custom domains"
-   - Follow the steps to add and verify your domain
-
-## Step 5: Set Up Monitoring and Alerts
-
-1. **Create dashboards:**
-   ```bash
-   az portal dashboard create --name "MassageBookingMonitoring" \
-     --resource-group massage-booking-rg --location eastus \
-     --input-path ./dashboard-template.json
-   ```
-
-2. **Configure alerts:**
-   ```bash
-   # Create an action group for notifications
-   az monitor action-group create --name massage-booking-alerts \
-     --resource-group massage-booking-rg --short-name mbAlerts \
-     --email-receiver name=admin email=admin@yourdomain.com
-
-   # Set up an alert for API response time
-   az monitor metrics alert create --name HighResponseTime \
-     --resource-group massage-booking-rg \
-     --scopes $(az webapp show --name massage-booking-api \
-       --resource-group massage-booking-rg --query id -o tsv) \
-     --condition "avg HttpResponseTime > 5" \
-     --window-size 5m --action $(az monitor action-group show \
-       --name massage-booking-alerts --resource-group massage-booking-rg \
-       --query id -o tsv)
-   ```
-
-## Step 6: Post-Deployment Verification
-
-1. **Verify API endpoints:**
-   ```bash
-   # Test API health
-   curl https://massage-booking-api.azurewebsites.net/api/health
-
-   # Test with authentication token (requires Azure AD B2C token)
-   curl -H "Authorization: Bearer YOUR_TOKEN" https://massage-booking-api.azurewebsites.net/api/appointments
-   ```
-
-2. **Verify frontend functionality:**
-   - Open the static web app URL in a browser
-   - Test authentication flows
-   - Verify that the frontend can communicate with the API
-
-## Step 7: Backup and Disaster Recovery
-
-1. **Configure database backups:**
-   ```bash
-   # Enable automated backups
-   az sql db update --name MassageBookingDb --resource-group massage-booking-rg \
-     --server massage-booking-sql --long-term-retention-backup-resource-id \
-     "/subscriptions/{subscription-id}/resourceGroups/massage-booking-rg/providers/Microsoft.Sql/servers/massage-booking-sql/databases/MassageBookingDb"
-   ```
-
-2. **Set up geo-replication (optional):**
-   ```bash
-   # Create a failover group
-   az sql failover-group create --name massage-booking-failover \
-     --resource-group massage-booking-rg --server massage-booking-sql \
-     --partner-server massage-booking-sql-secondary --partner-resource-group massage-booking-rg-secondary \
-     --databases MassageBookingDb
-   ```
-
-## CI/CD Pipeline with Azure DevOps
-
-### Backend CI/CD Pipeline
-
-Create an `azure-pipelines-backend.yml` file in your repository:
-
-```yaml
-trigger:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - src/MassageBooking.API/**
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  buildConfiguration: 'Release'
-  projectPath: 'src/MassageBooking.API/MassageBooking.API.csproj'
-
-stages:
-- stage: Build
-  jobs:
-  - job: BuildJob
-    steps:
-    - task: DotNetCoreCLI@2
-      displayName: 'Restore packages'
-      inputs:
-        command: 'restore'
-        projects: '$(projectPath)'
-
-    - task: DotNetCoreCLI@2
-      displayName: 'Build project'
-      inputs:
-        command: 'build'
-        projects: '$(projectPath)'
-        arguments: '--configuration $(buildConfiguration)'
-
-    - task: DotNetCoreCLI@2
-      displayName: 'Run tests'
-      inputs:
-        command: 'test'
-        projects: 'tests/**/*.csproj'
-        arguments: '--configuration $(buildConfiguration)'
-
-    - task: DotNetCoreCLI@2
-      displayName: 'Publish'
-      inputs:
-        command: 'publish'
-        publishWebProjects: true
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-        zipAfterPublish: true
-
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish artifacts'
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'api'
-
-- stage: Deploy
-  dependsOn: Build
-  jobs:
-  - deployment: DeployJob
-    environment: 'Production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureRmWebAppDeployment@4
-            inputs:
-              ConnectionType: 'AzureRM'
-              azureSubscription: 'Your-Azure-Subscription'
-              appType: 'webApp'
-              WebAppName: 'massage-booking-api'
-              packageForLinux: '$(Pipeline.Workspace)/api/*.zip'
-              AppSettings: '-ASPNETCORE_ENVIRONMENT Production'
+# Scaling Database
+sql_sku_name = "S1"       # Increase database tier
 ```
 
-## Troubleshooting
+### Adding New Environments
 
-### Common Issues and Resolutions
+1. **Create a New Environment Directory**:
+   ```bash
+   mkdir -p terraform/environments/staging
+   cp terraform/environments/dev/main.tf terraform/environments/staging/
+   cp terraform/environments/dev/variables.tf terraform/environments/staging/
+   cp terraform/environments/dev/outputs.tf terraform/environments/staging/
+   cp terraform/environments/dev/terraform.tfvars.example terraform/environments/staging/
+   ```
 
-1. **Connection String Issues:**
-   - Verify Key Vault access is properly configured
-   - Check that managed identity is enabled on the App Service
-   - Ensure the connection string format is correct for Azure SQL
+2. **Customize Variables** for the new environment.
 
-2. **CORS Issues:**
-   - Verify CORS settings in the API
-   - Check that the frontend is using the correct API URL
-   - Ensure authentication headers are being sent correctly
+3. **Deploy the New Environment**:
+   ```bash
+   cd terraform/environments/staging
+   terraform init
+   terraform plan -out=tfplan
+   terraform apply tfplan
+   ```
 
-3. **Authentication Problems:**
-   - Verify Azure AD B2C policies are correctly configured
-   - Check client ID and authority URLs in the frontend configuration
-   - Test token acquisition with a tool like Postman
+## Step 9: Troubleshooting
 
-4. **Deployment Failures:**
-   - Check app service logs: `az webapp log tail --name massage-booking-api --resource-group massage-booking-rg`
-   - Verify build artifacts are correctly configured
-   - Check for any missing dependencies or incorrect framework versions
+### Common Terraform Issues
 
-## Security Considerations
+1. **State Lock Issues**:
+   ```bash
+   # Force unlock state (use with caution)
+   terraform force-unlock LOCK_ID
+   ```
 
-- Enable [Azure DDoS Protection](https://docs.microsoft.com/en-us/azure/ddos-protection/ddos-protection-overview)
-- Configure [Azure Web Application Firewall](https://docs.microsoft.com/en-us/azure/web-application-firewall/overview)
-- Enable [TLS 1.2+ only](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-bindings#enforce-tls-versions)
-- Implement proper [role-based access control (RBAC)](https://docs.microsoft.com/en-us/azure/role-based-access-control/overview)
-- Use [Azure Private Link](https://docs.microsoft.com/en-us/azure/private-link/private-link-overview) for secure service access
+2. **Resource Creation Failures**:
+   - Check Azure Activity Log in the portal
+   - Review Terraform logs with increased verbosity:
+     ```bash
+     TF_LOG=DEBUG terraform apply
+     ```
 
-## Maintenance and Updates
+3. **Authentication Issues**:
+   - Ensure Azure CLI is logged in: `az login`
+   - Check if token is expired: `az account get-access-token`
 
-- Configure regular database maintenance
-- Set up automatic scaling rules
-- Establish a process for regular security updates
-- Implement blue-green deployment for zero-downtime updates
+### Application Issues
+
+1. **Connection String Problems**:
+   - Verify Key Vault access policies
+   - Check managed identity configuration
+   - Ensure correct connection string format
+
+2. **CORS Issues**:
+   - Verify frontend URL is added to CORS allowlist in App Service
+
+3. **Authentication Problems**:
+   - Check AAD B2C policies and application registrations
+   - Verify client IDs and redirect URIs
+
+## Step 10: Security Best Practices
+
+1. **Secrets Management**:
+   - Store sensitive values in Key Vault
+   - Use Terraform variables marked as sensitive
+   - Consider using Azure Key Vault provider for Terraform
+
+2. **Network Security**:
+   - Use private endpoints for services where possible
+   - Restrict public access with NSGs
+   - Enable Azure DDoS Protection
+
+3. **Identity and Access**:
+   - Use managed identities for Azure resources
+   - Implement proper role-based access control (RBAC)
+   - Enable MFA for all administrative accounts
 
 ## Additional Resources
 
+- [Terraform Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
 - [Azure App Service Documentation](https://docs.microsoft.com/en-us/azure/app-service/)
 - [Azure Static Web Apps Documentation](https://docs.microsoft.com/en-us/azure/static-web-apps/)
 - [Azure SQL Database Documentation](https://docs.microsoft.com/en-us/azure/azure-sql/)
-- [Azure AD B2C Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/)
-- [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/) 
+- [Azure AD B2C Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/) 

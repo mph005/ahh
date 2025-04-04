@@ -265,16 +265,16 @@ export function useAppointments(clientId) {
         
         if (isMounted) {
           setAppointments(response.data);
-          setError(null);
+        setError(null);
         }
       } catch (err) {
         if (isMounted) {
           setError('Failed to load appointments');
-          console.error(err);
+        console.error(err);
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false);
+        setIsLoading(false);
         }
       }
     }
@@ -561,3 +561,238 @@ Features:
 ## API Documentation
 
 API documentation is available through Swagger UI at `/swagger` when running the application in development mode. This provides interactive documentation for all available endpoints, including request parameters, response schemas, and authentication requirements.
+
+## Infrastructure as Code (Terraform)
+
+The project uses Terraform to manage and provision Azure infrastructure in a consistent, repeatable manner.
+
+### Directory Structure
+
+```
+terraform/
+  ├── README.md                    # Documentation for Terraform setup
+  ├── provider.tf                  # Azure provider configuration
+  ├── modules/                     # Reusable infrastructure components
+  │   ├── compute/                 # App Service, Functions, Static Web App
+  │   │   ├── main.tf
+  │   │   ├── variables.tf
+  │   │   └── outputs.tf
+  │   ├── database/                # Azure SQL Database
+  │   │   ├── main.tf
+  │   │   ├── variables.tf
+  │   │   └── outputs.tf
+  │   ├── networking/              # VNet, Subnets, NSGs
+  │   │   ├── main.tf
+  │   │   ├── variables.tf
+  │   │   └── outputs.tf
+  │   ├── security/                # Key Vault, AAD B2C Integration
+  │   │   ├── main.tf
+  │   │   ├── variables.tf 
+  │   │   └── outputs.tf
+  │   └── monitoring/              # Application Insights, Log Analytics
+  │       ├── main.tf
+  │       ├── variables.tf
+  │       └── outputs.tf
+  └── environments/                # Environment-specific configurations
+      ├── dev/                     # Development environment
+      │   ├── main.tf
+      │   ├── variables.tf
+      │   └── terraform.tfvars.example
+      ├── staging/                 # Staging environment
+      │   ├── main.tf
+      │   ├── variables.tf
+      │   └── terraform.tfvars.example
+      └── prod/                    # Production environment
+          ├── main.tf
+          ├── variables.tf
+          └── terraform.tfvars.example
+```
+
+### Module Design
+
+Each Terraform module is designed to be:
+
+1. **Focused**: Each module has a single responsibility
+2. **Reusable**: Configurable through variables
+3. **Secure**: Implements best practices for security
+4. **Maintainable**: Well-documented with clear variable names
+
+### Key Features
+
+#### Networking Module
+
+The networking module establishes a secure foundation with:
+
+```hcl
+# Example from networking/main.tf
+resource "azurerm_virtual_network" "vnet" {
+  name                = "${var.prefix}-vnet"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  address_space       = var.address_space
+  
+  tags = var.tags
+}
+
+resource "azurerm_subnet" "app_subnet" {
+  name                 = "${var.prefix}-app-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = [var.app_subnet_cidr]
+  service_endpoints    = ["Microsoft.Sql", "Microsoft.KeyVault"]
+}
+
+resource "azurerm_network_security_group" "app_nsg" {
+  name                = "${var.prefix}-app-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  
+  security_rule {
+    name                       = "AllowHTTPS"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  tags = var.tags
+}
+```
+
+#### Database Module
+
+The database module creates a secure Azure SQL Database with:
+
+```hcl
+# Example from database/main.tf
+resource "azurerm_mssql_server" "sql_server" {
+  name                         = "${var.prefix}-sqlserver"
+  resource_group_name          = var.resource_group_name
+  location                     = var.location
+  version                      = "12.0"
+  administrator_login          = var.admin_username
+  administrator_login_password = var.admin_password
+  
+  public_network_access_enabled    = var.public_access_enabled
+  minimum_tls_version              = "1.2"
+  
+  tags = var.tags
+}
+
+resource "azurerm_mssql_database" "database" {
+  name                = "${var.prefix}-db"
+  server_id           = azurerm_mssql_server.sql_server.id
+  sku_name            = var.database_sku
+  max_size_gb         = var.max_size_gb
+  
+  tags = var.tags
+}
+
+resource "azurerm_mssql_firewall_rule" "azure_services" {
+  count               = var.public_access_enabled ? 1 : 0
+  name                = "AllowAzureServices"
+  server_id           = azurerm_mssql_server.sql_server.id
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+```
+
+#### Security Module
+
+The security module implements Azure Key Vault with proper access controls:
+
+```hcl
+# Example from security/main.tf
+resource "azurerm_key_vault" "key_vault" {
+  name                        = "${var.prefix}-kv"
+  location                    = var.location
+  resource_group_name         = var.resource_group_name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = true
+  sku_name                    = "standard"
+  
+  network_acls {
+    default_action             = "Deny"
+    bypass                     = "AzureServices"
+    virtual_network_subnet_ids = var.authorized_subnet_ids
+    ip_rules                   = var.authorized_ip_ranges
+  }
+  
+  tags = var.tags
+}
+
+resource "azurerm_key_vault_access_policy" "app_policy" {
+  key_vault_id = azurerm_key_vault.key_vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = var.app_service_principal_id
+  
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
+```
+
+### State Management
+
+The project uses Azure Storage for remote state management:
+
+```hcl
+# Example backend configuration
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "massagebookingterraform"
+    container_name       = "tfstate"
+    key                  = "env/terraform.tfstate"
+  }
+}
+```
+
+### Environment-Specific Configuration
+
+Each environment (dev, staging, prod) has its own configuration with appropriate resource sizing and security settings:
+
+```hcl
+# Example from environments/dev/main.tf
+module "networking" {
+  source              = "../../modules/networking"
+  prefix              = "${var.prefix}-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  address_space       = ["10.0.0.0/16"]
+  app_subnet_cidr     = "10.0.1.0/24"
+  db_subnet_cidr      = "10.0.2.0/24"
+  tags                = local.tags
+}
+
+module "database" {
+  source               = "../../modules/database"
+  prefix               = "${var.prefix}-${var.environment}"
+  location             = var.location
+  resource_group_name  = azurerm_resource_group.rg.name
+  admin_username       = var.db_admin_username
+  admin_password       = var.db_admin_password
+  public_access_enabled = true  # Enable for dev environment only
+  database_sku         = "S0"   # Basic tier for development
+  subnet_id            = module.networking.db_subnet_id
+  tags                 = local.tags
+}
+```
+
+### Deployment Approach
+
+Terraform deployments follow a consistent workflow:
+
+1. **Init**: Initialize the Terraform workspace
+2. **Plan**: Preview the changes to be applied
+3. **Apply**: Apply the changes to create/update infrastructure
+4. **Validate**: Confirm the infrastructure matches the expected state
+
+Multiple environments are handled through separate state files and configuration directories, allowing for isolated and controlled changes to each environment.

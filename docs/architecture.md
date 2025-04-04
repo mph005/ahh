@@ -150,6 +150,121 @@ The system leverages several Azure PaaS services:
 - **Logic Apps**: Handles workflow automation (e.g., email notifications)
 - **Notification Hub**: Manages push notifications
 
+## Infrastructure as Code (Terraform)
+
+The Massage Therapy Booking System uses Terraform to automate the deployment and management of all Azure infrastructure components. This Infrastructure as Code (IaC) approach ensures consistency, repeatability, and security across all environments.
+
+### Terraform Architecture
+
+The Terraform implementation follows a modular approach that aligns with the system architecture:
+
+```
+┌────────────────────────────────────────────────────┐
+│ Terraform Root Module                              │
+│                                                    │
+│  ┌─────────────┐                                   │
+│  │             │                                   │
+│  │ Backend &   │                                   │
+│  │ Provider    │                                   │
+│  │ Config      │                                   │
+│  │             │                                   │
+│  └─────────────┘                                   │
+│         │                                          │
+│         ▼                                          │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ Environment Configuration (dev/staging/prod)│   │
+│  └─────────────────────────────────────────────┘   │
+│         │                                          │
+│         ▼                                          │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ Core Infrastructure Modules                 │   │
+│  │                                             │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │   │
+│  │  │          │  │          │  │          │   │   │
+│  │  │Networking│  │ Database │  │ Compute  │   │   │
+│  │  │          │  │          │  │          │   │   │
+│  │  └──────────┘  └──────────┘  └──────────┘   │   │
+│  │                                             │   │
+│  │  ┌──────────┐  ┌──────────┐                │   │
+│  │  │          │  │          │                │   │
+│  │  │ Security │  │Monitoring│                │   │
+│  │  │          │  │          │                │   │
+│  │  └──────────┘  └──────────┘                │   │
+│  └─────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────┘
+```
+
+### Key Terraform Components
+
+The Terraform implementation includes:
+
+1. **Provider Configuration**: Azure provider setup with authentication and versioning constraints.
+
+2. **State Management**: Remote state configuration using Azure Storage for secure state management.
+
+3. **Core Infrastructure Modules**:
+   - **Networking**: Virtual networks, subnets, NSGs, and Private DNS zones
+   - **Database**: Azure SQL Database with private endpoints and security configurations
+   - **Compute**: App Service Plans and Apps, Static Web Apps, and Function Apps
+   - **Security**: Key Vault, role assignments, and security configurations
+   - **Monitoring**: Application Insights, Log Analytics, and diagnostics settings
+
+4. **Environment-Specific Configurations**:
+   - Separate directories for dev, staging, and production
+   - Environment-specific variable files for appropriate resource sizing and settings
+
+### Network Security Architecture
+
+The Terraform-managed network architecture implements defense-in-depth:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Azure Virtual Network                                        │
+│                                                             │
+│  ┌─────────────────┐   ┌─────────────────┐                  │
+│  │                 │   │                 │                  │
+│  │ App Subnet      │   │ Database Subnet │                  │
+│  │                 │   │                 │                  │
+│  │  ┌───────────┐  │   │  ┌───────────┐  │                  │
+│  │  │           │  │   │  │           │  │                  │
+│  │  │App Service│◄─┼───┼──►SQL Database│  │                  │
+│  │  │  (API)    │  │   │  │           │  │                  │
+│  │  └───────────┘  │   │  └───────────┘  │                  │
+│  │        ▲        │   │                 │                  │
+│  └────────┼────────┘   └─────────────────┘                  │
+│           │                                                 │
+└───────────┼─────────────────────────────────────────────────┘
+            │                            ┌───────────────┐
+            │              Public IP     │               │
+            └────────────────────────────► Static Web App│
+                                         │  (Frontend)   │
+                                         │               │
+                                         └───────────────┘
+```
+
+### Integration with System Architecture
+
+The Terraform infrastructure directly supports the layered application architecture:
+
+1. **Client Layer**: Provisions Azure Static Web App for hosting the React SPA.
+
+2. **API Layer**: Deploys Azure App Service with the necessary configurations for the ASP.NET Core API.
+
+3. **Data Layer**: Creates Azure SQL Database with proper security controls and networking.
+
+4. **Security Layer**: Implements Azure AD B2C integration, Key Vault, and secure networking.
+
+5. **Monitoring Layer**: Sets up Application Insights, Log Analytics, and diagnostic settings.
+
+### Environment Isolation
+
+The Terraform configuration maintains strict isolation between environments:
+
+- Separate resource groups for each environment
+- Environment-specific naming conventions with prefixes/suffixes
+- Tailored security configurations based on environment requirements
+- Appropriate resource sizing (smaller for dev, larger for production)
+
 ## Communication Patterns
 
 ### API Communication
