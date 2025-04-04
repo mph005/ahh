@@ -993,6 +993,77 @@ az webapp deployment source config-zip \
    }
    ```
 
+## Cost Estimation
+
+Here are estimated monthly costs for the Massage Therapy Booking System infrastructure in Azure, based on the described architecture. These estimates are approximate and will vary based on usage patterns, data volume, and specific configurations.
+
+### Development Environment
+
+| Resource Type | Specifications | Estimated Monthly Cost (USD) |
+|---------------|----------------|------------------------------|
+| App Service | B1 (1 core, 1.75 GB RAM) | $54.75 |
+| SQL Database | Basic (5 DTU) | $4.90 |
+| Static Web App | Standard tier | $9.00 |
+| Key Vault | Standard tier, 5,000 operations | $0.03 |
+| Storage Account | Standard LRS, 50 GB | $1.15 |
+| Application Insights | 5 GB data | $2.30 |
+| Log Analytics | 5 GB data | $2.30 |
+| Networking (VNet, etc.) | Basic configuration | $5.00 |
+| **Total Estimated Cost** | | **$79.43** |
+
+### Staging Environment
+
+| Resource Type | Specifications | Estimated Monthly Cost (USD) |
+|---------------|----------------|------------------------------|
+| App Service | S1 (1 core, 1.75 GB RAM) | $73.00 |
+| SQL Database | Standard S0 (10 DTU) | $14.72 |
+| Static Web App | Standard tier | $9.00 |
+| Key Vault | Standard tier, 10,000 operations | $0.06 |
+| Storage Account | Standard LRS, 100 GB | $2.30 |
+| Application Insights | 10 GB data | $4.60 |
+| Log Analytics | 10 GB data | $4.60 |
+| Networking (VNet, etc.) | Standard configuration | $10.00 |
+| **Total Estimated Cost** | | **$118.28** |
+
+### Production Environment
+
+| Resource Type | Specifications | Estimated Monthly Cost (USD) |
+|---------------|----------------|------------------------------|
+| App Service | P1v2 (1 core, 3.5 GB RAM) | $146.00 |
+| SQL Database | Standard S1 (20 DTU) | $29.43 |
+| Static Web App | Standard tier | $9.00 |
+| Key Vault | Standard tier, 50,000 operations | $0.30 |
+| Storage Account | Standard GRS, 250 GB | $11.41 |
+| Application Insights | 25 GB data | $11.50 |
+| Log Analytics | 25 GB data | $11.50 |
+| Networking (VNet, etc.) | Advanced configuration | $20.00 |
+| CDN | Standard tier, 100 GB bandwidth | $10.86 |
+| **Total Estimated Cost** | | **$250.00** |
+
+### Cost Estimation Notes
+
+1. **Variable Costs**: The following costs are highly variable and can significantly impact your monthly bill:
+   - Data egress (outbound data transfer)
+   - Storage transaction volume
+   - Database usage beyond included DTUs
+   - Application Insights data volume
+
+2. **Reserved Instances**: Consider using Reserved Instances for App Service and other eligible resources to reduce costs by up to 40%. For example:
+   - 1-year reserved P1v2 App Service Plan: ~$87.60/month (40% savings)
+   - 3-year reserved P1v2 App Service Plan: ~$58.40/month (60% savings)
+
+3. **Cost Management Tools**:
+   - Use Azure Cost Management to set budgets and alerts
+   - Review Azure Advisor recommendations for cost optimization
+   - Consider Azure Dev/Test pricing for non-production environments
+
+4. **Scaling Impact**: Be aware that auto-scaling configurations will affect costs. The estimates above assume:
+   - Development: Fixed instance count (no scaling)
+   - Staging: Limited scaling (1-2 instances)
+   - Production: Moderate scaling (1-3 instances)
+
+You can use the [Azure Pricing Calculator](https://azure.microsoft.com/en-us/pricing/calculator/) to create a more detailed estimate based on your specific requirements and usage patterns.
+
 ## Disaster Recovery
 
 ### Database Backup and Restore
@@ -1439,5 +1510,247 @@ These operations need to be performed periodically:
 3. **Database Performance Tuning**:
    - Review query performance with Azure SQL Database Advisor
    - Implement recommended performance improvements
+
+## Running the Application Locally
+
+Before deploying to Azure, you'll likely want to run the application locally for development and testing. This section provides instructions for setting up and running both the backend API and frontend locally.
+
+### Setting Up Local Development Environment
+
+#### Prerequisites
+
+Ensure you have all the necessary tools installed:
+- .NET 7 SDK
+- SQL Server Express or LocalDB
+- Node.js and npm
+- Git
+- Visual Studio 2022 or Visual Studio Code
+- Azure CLI (for local Azure emulation)
+
+#### Clone the Repository
+
+```bash
+git clone https://github.com/your-org/massage-booking-system.git
+cd massage-booking-system
+```
+
+### Setting Up the Backend API
+
+#### 1. Configure Local Database
+
+1. **Create a Local SQL Database**:
+   - Using SQL Server Management Studio or Azure Data Studio, create a new database called `MassageBookingDb`
+   - Or use LocalDB:
+   ```bash
+   sqllocaldb create MassageBookingDb
+   ```
+
+2. **Update Connection String**:
+   - Create or modify `appsettings.Development.json` in the API project:
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MassageBookingDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+     }
+   }
+   ```
+
+#### 2. Configure Local Authentication
+
+For local development, you can use one of these approaches:
+
+1. **Use Development Authentication**:
+   - Modify `appsettings.Development.json`:
+   ```json
+   {
+     "Authentication": {
+       "UseDevAuthentication": true,
+       "DevUser": {
+         "Id": "local-dev-user",
+         "Name": "Development User",
+         "Email": "dev@example.com",
+         "Role": "Admin"
+       }
+     }
+   }
+   ```
+
+2. **Use Azure AD B2C Directly**:
+   - If you've already configured Azure AD B2C, you can use it locally:
+   ```json
+   {
+     "AzureAdB2C": {
+       "Instance": "https://yourtenant.b2clogin.com/",
+       "Domain": "yourtenant.onmicrosoft.com",
+       "ClientId": "your-api-client-id",
+       "SignUpSignInPolicyId": "B2C_1_signupsignin",
+       "TenantId": "your-b2c-tenant-id"
+     }
+   }
+   ```
+
+#### 3. Run Database Migrations
+
+```bash
+cd src/MassageBooking.API
+dotnet ef database update
+```
+
+#### 4. Seed Development Data (Optional)
+
+```bash
+dotnet run -- --seed-data
+```
+
+#### 5. Start the API
+
+##### Using Visual Studio:
+- Open the solution in Visual Studio
+- Set the API project as the startup project
+- Press F5 to start debugging
+
+##### Using Command Line:
+```bash
+cd src/MassageBooking.API
+dotnet run
+```
+
+The API should now be running at `https://localhost:5001` and `http://localhost:5000`.
+
+### Setting Up the Frontend
+
+#### 1. Install Dependencies
+
+```bash
+cd src/massage-booking-client
+npm install
+```
+
+#### 2. Configure Environment Variables
+
+Create a `.env.local` file in the frontend project directory:
+
+```
+REACT_APP_API_BASE_URL=https://localhost:5001/api
+REACT_APP_USE_MOCK_AUTH=true  # For development without B2C
+# Or use real B2C:
+# REACT_APP_AUTH_CLIENT_ID=your-b2c-client-id
+# REACT_APP_AUTH_AUTHORITY=https://yourtenant.b2clogin.com/yourtenant.onmicrosoft.com/B2C_1_signupsignin
+# REACT_APP_AUTH_REDIRECT_URI=http://localhost:3000
+# REACT_APP_AUTH_SIGN_UP_POLICY=B2C_1_signupsignin
+# REACT_APP_AUTH_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+# REACT_APP_AUTH_EDIT_PROFILE_POLICY=B2C_1_profileedit
+```
+
+#### 3. Start the Frontend Development Server
+
+```bash
+npm start
+```
+
+The frontend should now be running at `http://localhost:3000`.
+
+### Local Development with Azure Emulators
+
+For some Azure services, you can use local emulators:
+
+#### Azure Storage Emulator
+
+1. **Install Azurite**:
+   ```bash
+   npm install -g azurite
+   ```
+
+2. **Start Azurite**:
+   ```bash
+   azurite --silent --location c:\azurite --debug c:\azurite\debug.log
+   ```
+
+3. **Configure Connection in `appsettings.Development.json`**:
+   ```json
+   {
+     "Storage": {
+       "ConnectionString": "UseDevelopmentStorage=true"
+     }
+   }
+   ```
+
+#### Azure Key Vault
+
+For local development, you can mock Key Vault by:
+
+1. **Store Secrets in User Secrets**:
+   ```bash
+   cd src/MassageBooking.API
+   dotnet user-secrets init
+   dotnet user-secrets set "Secrets:SqlConnectionString" "your-connection-string"
+   ```
+
+2. **Configure in `appsettings.Development.json`**:
+   ```json
+   {
+     "UseLocalSecrets": true
+   }
+   ```
+
+### Debugging
+
+#### Backend Debugging
+
+1. **Visual Studio**:
+   - Set breakpoints in your code
+   - Use F5 to start debugging
+
+2. **Visual Studio Code**:
+   - Install C# extension
+   - Set up launch.json for debugging
+   - Set breakpoints and use F5
+
+#### Frontend Debugging
+
+1. **Browser DevTools**:
+   - Use Chrome or Edge DevTools (F12)
+   - Set breakpoints in the Sources tab
+
+2. **VS Code**:
+   - Use the Debugger for Chrome extension
+   - Set up launch.json for React debugging
+
+### Testing the Full Application Locally
+
+1. **Start the API** in one terminal window
+2. **Start the React frontend** in another terminal window
+3. **Open the frontend** in your browser at `http://localhost:3000`
+4. **Sign in** using either mock authentication or actual B2C
+5. **Test the application features**
+
+### Troubleshooting Local Development
+
+1. **CORS Issues**:
+   - Ensure the API has CORS enabled for `localhost`:
+   ```csharp
+   // In Program.cs or Startup.cs
+   app.UseCors(builder => builder
+       .WithOrigins("http://localhost:3000")
+       .AllowAnyMethod()
+       .AllowAnyHeader()
+       .AllowCredentials());
+   ```
+
+2. **SSL Certificate Issues**:
+   - Create a development certificate:
+   ```bash
+   dotnet dev-certs https --clean
+   dotnet dev-certs https --trust
+   ```
+
+3. **Database Connection Issues**:
+   - Check if SQL Server is running
+   - Verify the connection string
+   - Ensure the database exists
+
+4. **Authentication Issues**:
+   - For local development, consider using mock authentication
+   - If using B2C, check that the redirect URI includes `localhost`
 
 // ... existing code ... 
