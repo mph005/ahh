@@ -44,11 +44,11 @@ function ClientList() {
         <tbody>
           {clients.length > 0 ? (
             clients.map(client => (
-              <tr key={client.id}>
+              <tr key={client.clientId}>
                 <td>{`${client.firstName} ${client.lastName}`}</td>
                 <td>{client.email}</td>
-                <td>{client.phoneNumber}</td>
-                <td>{new Date(client.dateOfBirth).toLocaleDateString()}</td>
+                <td>{client.phone}</td>
+                <td>{client.dateOfBirth ? new Date(client.dateOfBirth).toLocaleDateString() : 'N/A'}</td>
               </tr>
             ))
           ) : (

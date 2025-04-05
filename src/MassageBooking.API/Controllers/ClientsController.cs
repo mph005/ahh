@@ -13,7 +13,8 @@ namespace MassageBooking.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,Therapist")] // Secure endpoints appropriately
+    // [Authorize(Roles = "Admin,Therapist")] // Secure endpoints appropriately - Changed to Admin Only
+    [Authorize(Roles = "Admin")] // Require Admin role for all client management actions
     public class ClientsController : ControllerBase
     {
         private readonly IClientService _clientService; // Use Service layer
@@ -54,7 +55,7 @@ namespace MassageBooking.API.Controllers
 
         // POST: api/clients
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Only Admins can create clients?
+        // [Authorize(Roles = "Admin")] // Redundant due to controller-level attribute, but kept for clarity if needed
         public async Task<ActionResult<ClientDetailsDTO>> CreateClient([FromBody] CreateClientDTO createDto)
         {
              _logger.LogInformation("Attempting to create a new client: {FirstName} {LastName}", createDto.FirstName, createDto.LastName);
@@ -71,7 +72,7 @@ namespace MassageBooking.API.Controllers
 
         // PUT: api/clients/{id}
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Admin")] // Only Admins can update clients?
+        // [Authorize(Roles = "Admin")] // Redundant due to controller-level attribute, but kept for clarity if needed
         public async Task<IActionResult> UpdateClient(Guid id, [FromBody] UpdateClientDTO updateDto)
         {
              _logger.LogInformation("Attempting to update client ID: {ClientId}", id);
@@ -105,7 +106,7 @@ namespace MassageBooking.API.Controllers
 
         // DELETE: api/clients/{id}
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "Admin")] // Only Admins can delete clients?
+        // [Authorize(Roles = "Admin")] // Redundant due to controller-level attribute, but kept for clarity if needed
         public async Task<IActionResult> DeleteClient(Guid id)
         {
             _logger.LogInformation("Attempting to delete client ID: {ClientId}", id);

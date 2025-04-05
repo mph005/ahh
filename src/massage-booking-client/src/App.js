@@ -5,6 +5,7 @@ import TherapistList from './components/TherapistList';
 import ClientList from './components/ClientList';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
+import RegisterPage from './components/RegisterPage';
 import './App.css';
 import { useAuth } from './context/AuthContext';
 
@@ -69,6 +70,7 @@ function App() {
           <Routes>
              {/* Public or common routes */}
              <Route path="/login" element={!isAuthenticated && !isLoading ? <Login /> : <Navigate to="/" replace />} />
+             <Route path="/register" element={!isAuthenticated && !isLoading ? <RegisterPage /> : <Navigate to="/" replace />} />
 
              {/* Protected Routes */}
              <Route

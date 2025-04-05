@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 // import { useNavigate } from 'react-router-dom'; // Uncomment if using react-router for redirection
 
 function Login() {
@@ -53,6 +54,10 @@ function Login() {
                     {loading ? 'Logging in...' : 'Login'}
                 </button>
             </form>
+            <div style={{ marginTop: '15px' }}>
+                <span>Don't have an account? </span>
+                <Link to="/register">Register here</Link>
+            </div>
         </div>
     );
 }

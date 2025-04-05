@@ -2,9 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-MassageBooking.API-your_user_secrets_id</UserSecretsId> 
+    <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
+
+  <!-- Make internals visible to the test project -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="MassageBooking.API.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />

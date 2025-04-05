@@ -7,11 +7,13 @@ using MassageBooking.API.DTOs;
 using MassageBooking.API.Models;
 using MassageBooking.API.Services;
 using MassageBooking.API.Data.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MassageBooking.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _appointmentService;

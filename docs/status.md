@@ -1,4 +1,4 @@
-# Development Status - 2024-04-05
+# Development Status - 2024-04-15
 
 This document tracks the high-level progress and current status of the Massage Therapy Booking System, focusing on local development.
 
@@ -12,6 +12,7 @@ This document tracks the high-level progress and current status of the Massage T
 - The frontend is a **React** application communicating with the API via **Axios** (using cookie authentication).
 - Core features (Appointments, Clients, Therapists, Services, SOAP Notes, Availability, Admin Dashboard) have base implementations, but may require further refinement and testing.
 - **Database seeding** is in place for Roles and a default Admin user in the Development environment.
+- **User registration** is now functional, allowing clients to create accounts with personal details.
 
 ## Recently Completed Major Efforts
 
@@ -28,22 +29,27 @@ This document tracks the high-level progress and current status of the Massage T
     - Fixed login/logout flow to use cookie authentication.
 3.  **Admin Page Access Fix:**
     - Corrected frontend routing in `App.js` to ensure Client and Therapist management pages are accessible to Admin users and added navigation links.
+4.  **User Registration Implementation:**
+    - Implemented client registration functionality with expanded user details.
+    - Created and connected a full registration form that collects email, name, phone, and date of birth.
+    - Enhanced the API to create both Identity user accounts and Client records in the database.
+    - Fixed globalization issues that were causing server errors.
+    - Updated the client list view to correctly display all client information.
 
 ## Current Focus & Blockers
 
-- **Focus:** Solidifying core functionality with the new Identity system, refining authorization, and preparing for further feature development or testing.
-- **Blockers:** None currently identified. The main immediate task is to implement user registration (Task Next.1 in `tasks/tasks.md`).
+- **Focus:** Refining authorization, improving UI/UX, and preparing for further feature development or testing.
+- **Blockers:** None currently identified.
 
 ## Next Steps & Priorities
 
 *(Refer to `tasks/tasks.md` for detailed task breakdown)*
 
-1.  **Implement User Registration:** Allow clients to self-register.
-2.  **Refine API Authorization:** Ensure all endpoints have correct role-based protection.
-3.  **(Optional) Seed Sample Data:** Add sample clients/therapists for testing.
-4.  **Address Nullability Warnings:** Improve code quality by fixing build warnings.
-5.  **Enhance Frontend UI/UX:** Improve usability and appearance.
-6.  **Testing:** Set up and implement unit/integration tests.
+1.  **Refine API Authorization:** Ensure all endpoints have correct role-based protection.
+2.  **(Optional) Seed Sample Data:** Add sample clients/therapists for testing.
+3.  **Address Nullability Warnings:** Improve code quality by fixing build warnings.
+4.  **Enhance Frontend UI/UX:** Improve usability and appearance.
+5.  **Testing:** Set up and implement unit/integration tests.
 
 ## Known Issues / Areas for Improvement
 

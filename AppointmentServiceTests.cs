@@ -68,7 +68,7 @@ namespace MassageBookingSystem.Tests
                 
             _mockAppointmentRepository
                 .Setup(repo => repo.AddAsync(It.IsAny<Appointment>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(true);
                 
             // Act
             var result = await _appointmentService.CreateAppointmentAsync(createDto);
@@ -216,7 +216,7 @@ namespace MassageBookingSystem.Tests
                 
             _mockAppointmentRepository
                 .Setup(repo => repo.UpdateAsync(It.IsAny<Appointment>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(true);
                 
             // Act
             await _appointmentService.CancelAppointmentAsync(appointmentId);
@@ -319,5 +319,53 @@ namespace MassageBookingSystem.Tests
         public string Name { get; set; }
         public int Duration { get; set; }
         public decimal Price { get; set; }
+    }
+    
+    public enum AppointmentStatus
+    {
+        Scheduled,
+        Completed,
+        Cancelled,
+        NoShow
+    }
+    
+    public class Appointment
+    {
+        public Guid AppointmentId { get; set; }
+        public Guid ClientId { get; set; }
+        public Guid TherapistId { get; set; }
+        public Guid ServiceId { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public AppointmentStatus Status { get; set; }
+        public string Notes { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+    
+    public class CreateAppointmentDto
+    {
+        public Guid ClientId { get; set; }
+        public Guid TherapistId { get; set; }
+        public Guid ServiceId { get; set; }
+        public DateTime StartTime { get; set; }
+        public string Notes { get; set; }
+    }
+    
+    public interface IAppointmentRepository
+    {
+        Task<bool> AddAsync(Appointment appointment);
+        Task<Appointment> GetByIdAsync(Guid id);
+        Task<bool> UpdateAsync(Appointment appointment);
+    }
+    
+    public interface IServiceRepository
+    {
+        Task<Service> GetByIdAsync(Guid id);
+    }
+    
+    public interface ITherapistRepository
+    {
+        Task<bool> IsAvailableAsync(Guid therapistId, DateTime startTime, DateTime endTime);
     }
 } 

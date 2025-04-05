@@ -22,6 +22,14 @@ These tasks were recently completed to integrate ASP.NET Core Identity and stabi
 - [x] **Task ID.14**: Refactor frontend `apiClient.js`: Remove JWT interceptor, add `withCredentials: true`.
 - [x] **Task ID.15**: Refactor frontend `AuthContext.js`: Remove JWT/localStorage logic, manage state based on cookie session (using `/api/auth/userinfo`), fix login/logout logic.
 - [x] **Task ID.16**: Fix frontend routing/links (`App.js`) for Client and Therapist management pages, ensuring they are accessible to Admin users.
+- [x] **Task Next.1**: Implement User Registration
+  - Added a `Register` method to `AuthController.cs` that creates both an Identity user and a Client record.
+  - Expanded the `RegisterRequestDTO` to include firstName, lastName, phone, and dateOfBirth.
+  - Created a comprehensive React registration form component to collect user information.
+  - Fixed an issue with globalization settings that was causing 500 errors.
+  - Fixed phone number and date of birth display in the ClientList component.
+  - Fixed error handling to provide clear feedback on registration failures.
+  - **Goal Achieved**: New clients can self-register with detailed personal information.
 
 ---
 
@@ -31,13 +39,6 @@ The immediate focus is solidifying the core application functionality within the
 
 ### High Priority
 
-- [ ] **Task Next.1**: Implement User Registration API Endpoint
-  - Add a `Register` method to `AuthController.cs`.
-  - Use `UserManager.CreateAsync` to create new users (Clients initially).
-  - Assign default role (e.g., "Client") upon registration.
-  - Define `RegisterRequestDTO` and `RegisterResponseDTO`.
-  - Add frontend registration form and connect it to the API.
-  - **Goal**: Allow new clients to self-register.
 - [ ] **Task Next.2**: Refine Authorization Rules
   - Review all API controllers (`AppointmentsController`, `ClientsController`, `TherapistsController`, `ServicesController`, `SoapNotesController`).
   - Apply appropriate `[Authorize]` attributes (with specific roles if needed) to actions based on intended user access (Admin, Therapist, Client, or authenticated user).

@@ -115,6 +115,10 @@ namespace MassageBooking.API.Services
 - Use Cookie-based authentication for the frontend interaction.
 - Inject `UserManager<ApplicationUser>` and `SignInManager<ApplicationUser>` into controllers/services where needed.
 - Secure endpoints using `[Authorize]` attributes, specifying roles (`[Authorize(Roles = "Admin")]`) where necessary.
+- User registration creates both an Identity user account and a corresponding Client record in the database.
+- Newly registered users are automatically assigned the "Client" role.
+- Client profiles include detailed information (first name, last name, email, phone, date of birth), which is collected during registration.
+- User information is shared between the Identity system (for authentication) and the business model (for domain functionality).
 
 ### Frontend Development (React)
 
@@ -226,49 +230,4 @@ export default AppointmentList;
 #### File Organization (`src/massage-booking-client/src`)
 
 - **`components/`**: Reusable UI components (e.g., `AppointmentCard.js`, `TherapistList.js`).
-- **`context/`**: React Context providers (e.g., `AuthContext.js`).
-- **`api/`**: API client setup (`apiClient.js`).
-- **`hooks/`**: Custom React hooks (if any).
-- **`pages/`**: (Optional) If components become complex, separate page-level components here.
-- **`App.js`**: Main application component with routing.
-- **`index.js`**: Application entry point.
-
-#### State Management
-
-- Use **React Context API** (`AuthContext.js`) for global state like authentication status and user information.
-- Use `useState` hook for local component state.
-- Consider `useReducer` for more complex local state logic if needed.
-
-#### API Interaction
-
-- Use the configured **Axios instance** in `apiClient.js` for all backend communication.
-- Ensure `withCredentials: true` is set in `apiClient.js` for cookie handling.
-- Handle loading states and errors gracefully in components that fetch data.
-- Use `useEffect` hook for data fetching on component mount or when dependencies change.
-- Implement cleanup logic in `useEffect` (e.g., using `AbortController`) to prevent state updates on unmounted components.
-
-## Design Patterns (Backend)
-
-### Repository Pattern
-
-- **Purpose**: Abstracts data access logic from the rest of the application.
-- **Implementation**: Interfaces (e.g., `IAppointmentRepository`) define contracts, and concrete classes (e.g., `AppointmentRepository`) implement them using EF Core.
-- **Benefits**: Decouples business logic from data access technology, improves testability (can mock repositories).
-
-### Service Pattern
-
-- **Purpose**: Encapsulates business logic related to a specific domain entity or feature.
-- **Implementation**: Interfaces (e.g., `IAppointmentService`) define business operations, and concrete classes (e.g., `AppointmentService`) implement them, often coordinating multiple repositories.
-- **Benefits**: Centralizes business logic, improves code organization and reusability.
-
-### Dependency Injection (DI)
-
-- **Purpose**: Provides dependencies (like repositories, services, loggers) to classes rather than having them create their own instances.
-- **Implementation**: ASP.NET Core's built-in DI container is used extensively. Register services/repositories in `Program.cs` (`builder.Services.AddScoped<IAppointmentService, AppointmentService>();`) and request them via constructor injection.
-- **Benefits**: Promotes loose coupling, enhances testability.
-
-## Removed Technologies/Patterns
-
-- **Azure Cloud Services**: Focus is on local development, so Azure-specific services (App Service, Azure SQL, AAD B2C, Key Vault) are not currently used.
-- **Terraform**: Infrastructure as Code for Azure is not currently used.
-- **JWT Authentication**: While the API has JWT configuration remnants, the primary authentication method for the frontend is Cookie-based Identity.
+- **`context/`

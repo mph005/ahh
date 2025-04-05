@@ -13,6 +13,7 @@ namespace MassageBooking.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // Overall controller authorization - GET actions have AllowAnonymous, others require Admin
     public class TherapistsController : ControllerBase
     {
         private readonly ITherapistService _therapistService; // Use Service layer

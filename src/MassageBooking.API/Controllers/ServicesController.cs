@@ -13,6 +13,7 @@ namespace MassageBooking.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // GET actions require authentication, CUD actions require Admin role
     public class ServicesController : ControllerBase
     {
         private readonly IServiceService _serviceService; // Use Service layer
@@ -28,7 +29,8 @@ namespace MassageBooking.API.Controllers
 
         // GET: api/services
         [HttpGet]
-        [AllowAnonymous] // Allow anyone to see available services
+        // [AllowAnonymous] // Changed: Require authentication to view services
+        [Authorize] 
         public async Task<ActionResult<IEnumerable<ServiceDTO>>> GetServices()
         {
             _logger.LogInformation("Getting all services");
@@ -39,7 +41,8 @@ namespace MassageBooking.API.Controllers
 
         // GET: api/services/{id}
         [HttpGet("{id:guid}")]
-        [AllowAnonymous] // Allow anyone to see specific service details
+        // [AllowAnonymous] // Changed: Require authentication to view specific service
+        [Authorize]
         public async Task<ActionResult<ServiceDTO>> GetService(Guid id)
         {
             _logger.LogInformation("Getting service by ID: {ServiceId}", id);

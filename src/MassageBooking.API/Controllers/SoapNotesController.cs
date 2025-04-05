@@ -14,7 +14,7 @@ namespace MassageBooking.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Therapist")]
     public class SoapNotesController : ControllerBase
     {
         private readonly ISoapNoteRepository _soapNoteRepository;
@@ -46,7 +46,6 @@ namespace MassageBooking.API.Controllers
         /// <param name="id">The SOAP note ID</param>
         /// <returns>The SOAP note details</returns>
         [HttpGet("{id:guid}")]
-        [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<SoapNoteDTO>> GetById(Guid id)
         {
             try
@@ -72,7 +71,6 @@ namespace MassageBooking.API.Controllers
         /// <param name="appointmentId">The appointment ID</param>
         /// <returns>The SOAP note for the appointment</returns>
         [HttpGet("appointment/{appointmentId:guid}")]
-        [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByAppointmentId(Guid appointmentId)
         {
             try
@@ -98,7 +96,6 @@ namespace MassageBooking.API.Controllers
         /// <param name="clientId">The client ID</param>
         /// <returns>List of SOAP notes for the client</returns>
         [HttpGet("client/{clientId:guid}")]
-        [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByClientId(Guid clientId)
         {
             try
@@ -119,7 +116,6 @@ namespace MassageBooking.API.Controllers
         /// <param name="therapistId">The therapist ID</param>
         /// <returns>List of SOAP notes created by the therapist</returns>
         [HttpGet("therapist/{therapistId:guid}")]
-        [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByTherapistId(Guid therapistId)
         {
             try
@@ -140,7 +136,7 @@ namespace MassageBooking.API.Controllers
         /// <param name="request">The SOAP note data</param>
         /// <returns>The created SOAP note</returns>
         [HttpPost]
-        [Authorize(Roles = "Admin,Therapist")]
+        [Authorize(Roles = "Therapist")]
         public async Task<ActionResult<SoapNoteDTO>> Create([FromBody] CreateSoapNoteDTO request)
         {
             try
@@ -214,7 +210,7 @@ namespace MassageBooking.API.Controllers
         /// <param name="request">The updated SOAP note data</param>
         /// <returns>The updated SOAP note</returns>
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Admin,Therapist")]
+        [Authorize(Roles = "Therapist")]
         public async Task<ActionResult<SoapNoteDTO>> Update(Guid id, [FromBody] UpdateSoapNoteDTO request)
         {
             try
@@ -249,12 +245,11 @@ namespace MassageBooking.API.Controllers
         }
 
         /// <summary>
-        /// Finalizes a SOAP note, making it read-only
+        /// Finalizes a SOAP note, preventing further updates
         /// </summary>
         /// <param name="id">The SOAP note ID</param>
-        /// <returns>Success or error message</returns>
         [HttpPut("{id:guid}/finalize")]
-        [Authorize(Roles = "Admin,Therapist")]
+        [Authorize(Roles = "Therapist")]
         public async Task<ActionResult> Finalize(Guid id)
         {
             try
@@ -275,10 +270,9 @@ namespace MassageBooking.API.Controllers
         }
 
         /// <summary>
-        /// Deletes a SOAP note
+        /// Deletes a SOAP note (Use with caution - consider soft delete)
         /// </summary>
         /// <param name="id">The SOAP note ID</param>
-        /// <returns>Success or error message</returns>
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Delete(Guid id)
