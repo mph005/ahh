@@ -15,7 +15,7 @@ namespace MassageBooking.API.Data.Repositories
         /// </summary>
         /// <param name="id">The appointment ID</param>
         /// <returns>The appointment with related entities or null if not found</returns>
-        Task<Appointment> GetByIdAsync(Guid id);
+        Task<Appointment?> GetByIdAsync(Guid id);
         
         /// <summary>
         /// Gets all appointments for a specific client
@@ -23,6 +23,15 @@ namespace MassageBooking.API.Data.Repositories
         /// <param name="clientId">The client ID</param>
         /// <returns>Collection of appointments</returns>
         Task<IEnumerable<Appointment>> GetByClientIdAsync(Guid clientId);
+        
+        /// <summary>
+        /// Gets a therapist's schedule for a specific date range
+        /// </summary>
+        /// <param name="therapistId">The therapist ID</param>
+        /// <param name="startDate">The start date of the range</param>
+        /// <param name="endDate">The end date of the range</param>
+        /// <returns>Collection of appointments in the specified date range</returns>
+        Task<IEnumerable<Appointment>> GetByTherapistIdAsync(Guid therapistId);
         
         /// <summary>
         /// Gets a therapist's schedule for a specific date range
@@ -49,11 +58,7 @@ namespace MassageBooking.API.Data.Repositories
         /// <param name="startDate">The start date to search from</param>
         /// <param name="endDate">The end date to search to</param>
         /// <returns>Collection of available time slots</returns>
-        Task<IEnumerable<AvailableSlot>> FindAvailableSlotsAsync(
-            Guid serviceId, 
-            Guid? therapistId, 
-            DateTime startDate, 
-            DateTime endDate);
+        Task<IEnumerable<AvailableSlot>> FindAvailableSlotsAsync(Guid serviceId, Guid? therapistId, DateTime startDate, DateTime endDate);
         
         /// <summary>
         /// Checks if there is a scheduling conflict for a therapist at a specific time
@@ -63,11 +68,7 @@ namespace MassageBooking.API.Data.Repositories
         /// <param name="endTime">The appointment end time</param>
         /// <param name="excludeAppointmentId">Optional appointment ID to exclude from conflict check</param>
         /// <returns>True if there is a conflict, false otherwise</returns>
-        Task<bool> HasSchedulingConflictAsync(
-            Guid therapistId, 
-            DateTime startTime, 
-            DateTime endTime, 
-            Guid? excludeAppointmentId = null);
+        Task<bool> HasSchedulingConflictAsync(Guid therapistId, DateTime startTime, DateTime endTime, Guid? excludeAppointmentId = null);
         
         /// <summary>
         /// Adds a new appointment
@@ -86,5 +87,19 @@ namespace MassageBooking.API.Data.Repositories
         /// </summary>
         /// <param name="id">The ID of the appointment to delete</param>
         Task DeleteAsync(Guid id);
+        
+        /// <summary>
+        /// Gets all appointments (use with caution for performance).
+        /// </summary>
+        /// <returns>A collection of all appointments.</returns>
+        Task<IEnumerable<Appointment>> GetAllAsync();
+    }
+
+    public class TimeSlot
+    {
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public int TherapistId { get; set; }
+        public string TherapistName { get; set; } = string.Empty;
     }
 } 

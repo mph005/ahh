@@ -22,259 +22,258 @@ namespace MassageBooking.API.Data.Repositories
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<Appointment> GetByIdAsync(Guid id)
+        public async Task<Appointment?> GetByIdAsync(Guid id)
         {
-            try
-            {
-                return await _context.Appointments
-                    .Include(a => a.Client)
-                    .Include(a => a.Therapist)
-                    .Include(a => a.Service)
-                    .FirstOrDefaultAsync(a => a.AppointmentId == id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving appointment with ID {AppointmentId}", id);
-                throw;
-            }
+            return await _context.Appointments
+                .Include(a => a.Client)
+                .Include(a => a.Therapist)
+                .Include(a => a.Service)
+                .FirstOrDefaultAsync(a => a.AppointmentId == id);
+        }
+
+        public async Task<IEnumerable<Appointment>> GetAllAsync()
+        {
+            _logger.LogInformation("Retrieving all appointments");
+            // Include necessary related data for potential DTO mapping later
+            return await _context.Appointments
+                                 .Include(a => a.Client)
+                                 .Include(a => a.Therapist)
+                                 .Include(a => a.Service)
+                                 .OrderBy(a => a.StartTime) // Example ordering
+                                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetByClientIdAsync(Guid clientId)
         {
-            try
-            {
-                return await _context.Appointments
-                    .Include(a => a.Service)
-                    .Include(a => a.Therapist)
-                    .Where(a => a.ClientId == clientId)
-                    .OrderByDescending(a => a.StartTime)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving appointments for client {ClientId}", clientId);
-                throw;
-            }
+            return await _context.Appointments
+                .Include(a => a.Therapist)
+                .Include(a => a.Service)
+                .Where(a => a.ClientId == clientId)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Appointment>> GetByTherapistIdAsync(Guid therapistId)
+        {
+            return await _context.Appointments
+                .Include(a => a.Client)
+                .Include(a => a.Service)
+                .Where(a => a.TherapistId == therapistId)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetByTherapistIdAsync(Guid therapistId, DateTime startDate, DateTime endDate)
         {
-            try
-            {
-                return await _context.Appointments
-                    .Include(a => a.Client)
-                    .Include(a => a.Service)
-                    .Where(a => a.TherapistId == therapistId && 
-                               a.StartTime >= startDate && 
-                               a.EndTime <= endDate)
-                    .OrderBy(a => a.StartTime)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving schedule for therapist {TherapistId} between {StartDate} and {EndDate}", 
-                    therapistId, startDate, endDate);
-                throw;
-            }
+            return await _context.Appointments
+                .Include(a => a.Client)
+                .Include(a => a.Service)
+                .Where(a => a.TherapistId == therapistId && 
+                            a.StartTime >= startDate && 
+                            a.StartTime <= endDate)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetAppointmentsInRangeAsync(DateTime startDate, DateTime endDate)
         {
-            try
-            {
-                return await _context.Appointments
-                    .Include(a => a.Client)
-                    .Include(a => a.Therapist)
-                    .Include(a => a.Service)
-                    .Where(a => a.StartTime >= startDate && a.EndTime <= endDate)
-                    .OrderBy(a => a.StartTime)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving appointments between {StartDate} and {EndDate}", 
-                    startDate, endDate);
-                throw;
-            }
+             _logger.LogInformation("Retrieving appointments from {StartDate} to {EndDate}", startDate, endDate);
+             // Ensure dates are handled correctly (e.g., inclusive/exclusive, time component)
+             // This example assumes filtering on the date part only for StartTime
+             var startDateOnly = startDate.Date;
+             var endDateOnly = endDate.Date.AddDays(1); // Make range exclusive of the end date's time
+
+            return await _context.Appointments
+                                 .Include(a => a.Client)
+                                 .Include(a => a.Therapist)
+                                 .Include(a => a.Service)
+                                 .Where(a => a.StartTime >= startDateOnly && a.StartTime < endDateOnly)
+                                 .OrderBy(a => a.StartTime)
+                                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<AvailableSlot>> FindAvailableSlotsAsync(
-            Guid serviceId, 
-            Guid? therapistId, 
-            DateTime startDate, 
-            DateTime endDate)
+        public async Task<IEnumerable<AvailableSlot>> FindAvailableSlotsAsync(Guid serviceId, Guid? therapistId, DateTime startDate, DateTime endDate)
         {
-            try
+            // Get the service to determine duration
+            var service = await _context.Services.FirstOrDefaultAsync(s => s.ServiceId == serviceId);
+            if (service == null)
             {
-                // Get the service to know its duration
-                var service = await _context.Services
-                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId);
-                
-                if (service == null)
+                _logger.LogWarning("Service with ID {ServiceId} not found when finding available slots.", serviceId);
+                return new List<AvailableSlot>();
+            }
+
+            // Get therapists who offer this service
+            var query = _context.Therapists.Where(t => t.IsActive);
+            if (therapistId.HasValue)
+            {
+                query = query.Where(t => t.TherapistId == therapistId.Value);
+            }
+            else
+            {
+                // Filter by therapists who offer the service
+                query = query.Where(t => t.Services.Any(ts => ts.ServiceId == serviceId));
+            }
+            
+            var therapists = await query.ToListAsync();
+
+            if (!therapists.Any())
+            {
+                _logger.LogInformation("No active therapists found offering service ID {ServiceId} (Therapist requested: {TherapistId})", 
+                    serviceId, therapistId.HasValue ? therapistId.Value.ToString() : "Any");
+                return new List<AvailableSlot>();
+            }
+
+            var therapistIds = therapists.Select(t => t.TherapistId).ToList();
+
+            // Get all appointments in the date range for these therapists
+            var appointments = await _context.Appointments
+                .Where(a => therapistIds.Contains(a.TherapistId) && 
+                            a.Status != AppointmentStatus.Cancelled &&
+                            a.EndTime > startDate && // Use > for EndTime
+                            a.StartTime < endDate) // Use < for StartTime
+                .ToListAsync();
+
+            // Get all availability records for these therapists
+            var availabilities = await _context.Availabilities
+                .Where(a => therapistIds.Contains(a.TherapistId) && a.IsAvailable)
+                .ToListAsync();
+
+            var availableSlots = new List<AvailableSlot>();
+            int slotIncrementMinutes = 30; // Check every 30 minutes
+
+            // For each therapist, for each day in the range
+            foreach (var therapist in therapists)
+            {
+                for (var day = startDate.Date; day <= endDate.Date; day = day.AddDays(1))
                 {
-                    _logger.LogWarning("Service with ID {ServiceId} not found", serviceId);
-                    return Enumerable.Empty<AvailableSlot>();
-                }
+                    // Determine availability for this day (specific date overrides day of week)
+                    var dateAvailability = availabilities
+                        .FirstOrDefault(a => a.TherapistId == therapist.TherapistId && 
+                                            a.DateOverride.HasValue &&
+                                            a.DateOverride.Value.Date == day);
 
-                var serviceDuration = service.Duration;
-                var slots = new List<AvailableSlot>();
-
-                // Find therapists who offer this service
-                var query = _context.Therapists
-                    .Include(t => t.Services)
-                    .Where(t => t.Services.Any(s => s.ServiceId == serviceId));
-
-                // If therapistId is provided, filter to just that therapist
-                if (therapistId.HasValue)
-                {
-                    query = query.Where(t => t.TherapistId == therapistId.Value);
-                }
-
-                var therapists = await query.ToListAsync();
-
-                foreach (var therapist in therapists)
-                {
-                    // Get therapist's availability for the date range
-                    var availabilities = await _context.Availabilities
-                        .Where(a => a.TherapistId == therapist.TherapistId &&
-                                   a.DayOfWeek >= startDate.DayOfWeek &&
-                                   a.DayOfWeek <= endDate.DayOfWeek)
-                        .ToListAsync();
-
-                    // Get therapist's existing appointments
-                    var appointments = await _context.Appointments
-                        .Where(a => a.TherapistId == therapist.TherapistId &&
-                                   a.StartTime >= startDate &&
-                                   a.EndTime <= endDate &&
-                                   a.Status != "Cancelled")
-                        .ToListAsync();
-
-                    // For each day in the range
-                    for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+                    Availability? effectiveAvailability = dateAvailability;
+                    
+                    if (effectiveAvailability == null)
                     {
-                        // Find availability for this day of week
-                        var dayAvailability = availabilities.FirstOrDefault(a => a.DayOfWeek == date.DayOfWeek);
+                        // If no specific date availability, check day of week
+                        effectiveAvailability = availabilities
+                            .FirstOrDefault(a => a.TherapistId == therapist.TherapistId && 
+                                               a.DayOfWeek.HasValue && 
+                                               a.DayOfWeek.Value == day.DayOfWeek &&
+                                               !a.DateOverride.HasValue);
+                    }
+
+                    // Skip if therapist is marked unavailable for the specific date, or no recurring/specific entry exists
+                    if (effectiveAvailability == null || !effectiveAvailability.IsAvailable || 
+                        !effectiveAvailability.StartTime.HasValue || !effectiveAvailability.EndTime.HasValue)
+                    {
+                        continue; 
+                    }
+                    
+                    // Calculate the therapist's working window for the day
+                    var workStart = day.Add(effectiveAvailability.StartTime.Value);
+                    var workEnd = day.Add(effectiveAvailability.EndTime.Value);
+                    
+                    // Adjust the potential slot start/end based on the query range
+                    var potentialSlotStart = (workStart > startDate) ? workStart : startDate;
+                    var potentialSlotEnd = (workEnd < endDate) ? workEnd : endDate;
+
+                    // Iterate through potential time slots
+                    for (var slotStart = potentialSlotStart; slotStart.AddMinutes(service.DurationMinutes) <= potentialSlotEnd; slotStart = slotStart.AddMinutes(slotIncrementMinutes))
+                    {
+                        var slotEnd = slotStart.AddMinutes(service.DurationMinutes);
                         
-                        if (dayAvailability == null)
+                        // Ensure the slot is fully within the working hours
+                        if (slotEnd > workEnd) continue;
+                        
+                        // Check if slot overlaps with break time
+                        bool overlapsBreak = false;
+                        if (effectiveAvailability.BreakStartTime.HasValue && effectiveAvailability.BreakEndTime.HasValue)
                         {
-                            continue; // Therapist not available on this day
+                            var breakStart = day.Add(effectiveAvailability.BreakStartTime.Value);
+                            var breakEnd = day.Add(effectiveAvailability.BreakEndTime.Value);
+                            // Check for overlap: (SlotStart < BreakEnd) and (SlotEnd > BreakStart)
+                            overlapsBreak = slotStart < breakEnd && slotEnd > breakStart;
                         }
+                        if (overlapsBreak) continue;
 
-                        var startTime = new DateTime(
-                            date.Year, date.Month, date.Day,
-                            dayAvailability.StartTime.Hours,
-                            dayAvailability.StartTime.Minutes, 0);
-                            
-                        var endTime = new DateTime(
-                            date.Year, date.Month, date.Day,
-                            dayAvailability.EndTime.Hours,
-                            dayAvailability.EndTime.Minutes, 0);
+                        // Check if slot conflicts with existing appointments
+                        bool hasConflict = appointments.Any(a => 
+                            a.TherapistId == therapist.TherapistId && 
+                            slotStart < a.EndTime && // Slot starts before appointment ends
+                            slotEnd > a.StartTime); // Slot ends after appointment starts
+                        
+                        if (hasConflict) continue;
 
-                        // Generate potential slots based on service duration
-                        for (var slotStart = startTime; slotStart.AddMinutes(serviceDuration) <= endTime; slotStart = slotStart.AddMinutes(30))
+                        // Add available slot if it hasn't been added already (possible due to increment)
+                        if (!availableSlots.Any(s => s.StartTime == slotStart && s.TherapistId == therapist.TherapistId))
                         {
-                            var slotEnd = slotStart.AddMinutes(serviceDuration);
-                            
-                            // Check if this slot conflicts with existing appointments
-                            if (!HasSchedulingConflict(appointments, slotStart, slotEnd))
-                            {
-                                slots.Add(new AvailableSlot
-                                {
-                                    StartTime = slotStart,
-                                    EndTime = slotEnd,
-                                    TherapistId = therapist.TherapistId,
-                                    TherapistName = $"{therapist.FirstName} {therapist.LastName}"
-                                });
-                            }
+                             availableSlots.Add(new AvailableSlot
+                             {
+                                 StartTime = slotStart,
+                                 EndTime = slotEnd,
+                                 TherapistId = therapist.TherapistId,
+                                 TherapistName = $"{therapist.FirstName} {therapist.LastName}",
+                                 ServiceId = serviceId,
+                                 ServiceName = service.Name,
+                                 Duration = service.DurationMinutes
+                             });
                         }
                     }
                 }
+            }
 
-                return slots;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error finding available slots for service {ServiceId} between {StartDate} and {EndDate}",
-                    serviceId, startDate, endDate);
-                throw;
-            }
+            return availableSlots.OrderBy(s => s.StartTime).ThenBy(s => s.TherapistName).ToList();
         }
 
         public async Task<bool> HasSchedulingConflictAsync(Guid therapistId, DateTime startTime, DateTime endTime, Guid? excludeAppointmentId = null)
         {
-            try
+            var query = _context.Appointments
+                .Where(a => a.TherapistId == therapistId &&
+                            a.Status != AppointmentStatus.Cancelled &&
+                            startTime < a.EndTime && 
+                            endTime > a.StartTime);
+            
+            if (excludeAppointmentId.HasValue)
             {
-                var query = _context.Appointments
-                    .Where(a => a.TherapistId == therapistId &&
-                               a.Status != "Cancelled" &&
-                               ((a.StartTime < endTime && a.EndTime > startTime) || 
-                                (a.StartTime == startTime && a.EndTime == endTime)));
-
-                if (excludeAppointmentId.HasValue)
-                {
-                    query = query.Where(a => a.AppointmentId != excludeAppointmentId.Value);
-                }
-
-                return await query.AnyAsync();
+                query = query.Where(a => a.AppointmentId != excludeAppointmentId.Value);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking scheduling conflict for therapist {TherapistId} at {StartTime}", 
-                    therapistId, startTime);
-                throw;
-            }
-        }
-
-        private bool HasSchedulingConflict(IEnumerable<Appointment> appointments, DateTime startTime, DateTime endTime)
-        {
-            return appointments.Any(a => 
-                (a.StartTime < endTime && a.EndTime > startTime) || 
-                (a.StartTime == startTime && a.EndTime == endTime));
+            
+            return await query.AnyAsync();
         }
 
         public async Task AddAsync(Appointment appointment)
         {
-            try
+             if (appointment.AppointmentId == Guid.Empty)
             {
-                await _context.Appointments.AddAsync(appointment);
-                await _context.SaveChangesAsync();
+                appointment.AppointmentId = Guid.NewGuid();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding appointment {@Appointment}", appointment);
-                throw;
-            }
+            appointment.CreatedAt = DateTime.UtcNow;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.Appointments.AddAsync(appointment);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Appointment appointment)
         {
-            try
-            {
-                _context.Appointments.Update(appointment);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating appointment {@Appointment}", appointment);
-                throw;
-            }
+            appointment.UpdatedAt = DateTime.UtcNow;
+            _context.Appointments.Update(appointment);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid appointmentId)
         {
-            try
+            var appointment = await _context.Appointments.FindAsync(appointmentId);
+            if (appointment != null)
             {
-                var appointment = await _context.Appointments.FindAsync(id);
-                if (appointment != null)
-                {
-                    _context.Appointments.Remove(appointment);
-                    await _context.SaveChangesAsync();
-                }
+                _context.Appointments.Remove(appointment);
+                await _context.SaveChangesAsync();
+                 _logger.LogInformation("Deleted appointment {AppointmentId}", appointmentId);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error deleting appointment with ID {AppointmentId}", id);
-                throw;
+                _logger.LogWarning("Attempted to delete non-existent appointment {AppointmentId}", appointmentId);
             }
         }
     }

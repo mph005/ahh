@@ -13,33 +13,29 @@ namespace MassageBooking.API.Models
         /// The unique identifier for the availability record
         /// </summary>
         [Key]
-        public Guid AvailabilityId { get; set; }
+        public Guid AvailabilityId { get; set; } = Guid.NewGuid();
         
         /// <summary>
         /// The ID of the therapist this availability is for
         /// </summary>
+        [Required]
         public Guid TherapistId { get; set; }
         
         /// <summary>
-        /// Reference to the therapist
+        /// Specific date for one-time availabilities or overrides
         /// </summary>
-        [ForeignKey("TherapistId")]
-        public virtual Therapist Therapist { get; set; }
+        public DateTime? DateOverride { get; set; }
         
         /// <summary>
-        /// Specific date this availability is for (null if recurring)
-        /// </summary>
-        public DateTime? SpecificDate { get; set; }
-        
-        /// <summary>
-        /// Day of week this availability is for (used for recurring availability)
+        /// For recurring availabilities (e.g., every Monday)
         /// </summary>
         public DayOfWeek? DayOfWeek { get; set; }
         
         /// <summary>
         /// Whether the therapist is available
         /// </summary>
-        public bool IsAvailable { get; set; }
+        [Required]
+        public bool IsAvailable { get; set; } = true;
         
         /// <summary>
         /// Start time of availability
@@ -52,28 +48,41 @@ namespace MassageBooking.API.Models
         public TimeSpan? EndTime { get; set; }
         
         /// <summary>
-        /// Start time of break period
+        /// Break start time of availability
         /// </summary>
         public TimeSpan? BreakStartTime { get; set; }
         
         /// <summary>
-        /// End time of break period
+        /// Break end time of availability
         /// </summary>
         public TimeSpan? BreakEndTime { get; set; }
         
         /// <summary>
         /// Additional notes about the availability
         /// </summary>
-        public string Notes { get; set; }
+        [MaxLength(500)]
+        public string? Notes { get; set; }
         
         /// <summary>
         /// When the availability record was created
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         /// <summary>
         /// When the availability record was last updated
         /// </summary>
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        /// <summary>
+        /// Reference to the therapist
+        /// </summary>
+        [ForeignKey("TherapistId")]
+        public virtual Therapist Therapist { get; set; } = null!;
+        
+        /// <summary>
+        /// Whether the availability is recurring
+        /// </summary>
+        [NotMapped]
+        public bool IsRecurring => DayOfWeek.HasValue && !DateOverride.HasValue;
     }
 } 

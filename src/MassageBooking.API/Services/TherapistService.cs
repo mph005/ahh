@@ -52,7 +52,7 @@ namespace MassageBooking.API.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<TherapistListItemDTO>> GetAllTherapistsAsync()
+        public async Task<List<TherapistListItemDTO>> GetAllTherapistsListAsync()
         {
             try
             {
@@ -77,7 +77,7 @@ namespace MassageBooking.API.Services
                     ServiceId = s.ServiceId,
                     Name = s.Name,
                     Description = s.Description,
-                    Duration = s.Duration,
+                    DurationMinutes = s.DurationMinutes,
                     Price = s.Price,
                     IsActive = s.IsActive
                 }).ToList();
@@ -213,7 +213,7 @@ namespace MassageBooking.API.Services
                     var hasConflicts = await _appointmentRepository.GetAppointmentsInRangeAsync(
                         startDateTime, endDateTime);
                     
-                    if (hasConflicts.Any(a => a.TherapistId == therapistId && a.Status != "Cancelled"))
+                    if (hasConflicts.Any(a => a.TherapistId == therapistId && a.Status != AppointmentStatus.Cancelled))
                     {
                         return new OperationResultDTO
                         {
@@ -315,7 +315,7 @@ namespace MassageBooking.API.Services
                     request.StartDateTime, request.EndDateTime);
                 
                 var therapistAppointments = existingAppointments
-                    .Where(a => a.TherapistId == therapistId && a.Status != "Cancelled")
+                    .Where(a => a.TherapistId == therapistId && a.Status != AppointmentStatus.Cancelled)
                     .ToList();
                 
                 if (therapistAppointments.Any() && !request.OverrideExistingAppointments)
@@ -332,7 +332,7 @@ namespace MassageBooking.API.Services
                 {
                     foreach (var appointment in therapistAppointments)
                     {
-                        appointment.Status = "Cancelled";
+                        appointment.Status = AppointmentStatus.Cancelled;
                         appointment.Notes = $"{appointment.Notes}\nCancelled due to therapist unavailability: {request.Reason}";
                         appointment.UpdatedAt = DateTime.UtcNow;
                         
@@ -608,6 +608,73 @@ namespace MassageBooking.API.Services
             }
         }
 
+        /// <inheritdoc />
+        public async Task<Therapist?> GetTherapistEntityByIdAsync(Guid therapistId)
+        {
+            // This method is intended for internal use where the entity is needed for updates.
+            try
+            {
+                return await _therapistRepository.GetByIdAsync(therapistId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving therapist entity with ID {TherapistId}", therapistId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<TherapistListItemDTO>> GetActiveTherapistsAsync()
+        {
+            try
+            {
+                var therapists = await _therapistRepository.GetAllAsync();
+                return therapists.Where(t => t.IsActive).Select(MapToTherapistListItemDTO);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving active therapists");
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<OperationResultDTO> DeleteTherapistAsync(Guid therapistId)
+        {
+            try
+            {
+                // Find therapist
+                var therapist = await _therapistRepository.GetByIdAsync(therapistId);
+                if (therapist == null)
+                {
+                    return new OperationResultDTO { Success = false, ErrorMessage = "Therapist not found." };
+                }
+
+                // Check for future appointments (optional, depending on business rules)
+                // var appointments = await _appointmentRepository.GetByTherapistIdAsync(therapistId, DateTime.UtcNow, DateTime.MaxValue);
+                // if (appointments.Any(a => a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Rescheduled))
+                // {
+                //     return new OperationResultDTO { Success = false, ErrorMessage = "Therapist has future appointments. Please cancel or reassign them first." };
+                // }
+
+                // Soft delete: Mark as inactive
+                therapist.IsActive = false;
+                therapist.UpdatedAt = DateTime.UtcNow;
+                await _therapistRepository.UpdateAsync(therapist);
+                
+                // Optionally, also delete/clear availability
+                // await _availabilityRepository.DeleteByTherapistIdAsync(therapistId);
+
+                _logger.LogInformation("Soft deleted therapist ID: {TherapistId}", therapistId);
+                return new OperationResultDTO { Success = true };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting therapist ID {TherapistId}", therapistId);
+                return new OperationResultDTO { Success = false, ErrorMessage = "An error occurred during deletion." };
+            }
+        }
+
         #region Mapping Methods
 
         private TherapistDetailsDTO MapToTherapistDetailsDTO(Therapist therapist)
@@ -641,6 +708,92 @@ namespace MassageBooking.API.Services
                 ImageUrl = therapist.ImageUrl,
                 IsActive = therapist.IsActive
             };
+        }
+
+        #endregion
+
+        #region Int ID Interface Implementation
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<Therapist>> GetAllTherapistsAsync()
+        {
+            try
+            {
+                return await _therapistRepository.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all therapists");
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<Therapist> CreateTherapistAsync(Therapist therapist)
+        {
+            try
+            {
+                if (therapist == null)
+                {
+                    throw new ArgumentNullException(nameof(therapist));
+                }
+
+                // Set creation and update timestamps
+                if (therapist.CreatedAt == default)
+                {
+                    therapist.CreatedAt = DateTime.UtcNow;
+                }
+                
+                therapist.UpdatedAt = DateTime.UtcNow;
+                
+                // If ID is not set, create a new ID
+                if (therapist.TherapistId == Guid.Empty)
+                {
+                    therapist.TherapistId = Guid.NewGuid();
+                }
+
+                await _therapistRepository.AddAsync(therapist);
+                return therapist;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating therapist: {TherapistName}", 
+                    $"{therapist?.FirstName} {therapist?.LastName}");
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<Therapist> UpdateTherapistAsync(Therapist therapist)
+        {
+            try
+            {
+                if (therapist == null)
+                {
+                    throw new ArgumentNullException(nameof(therapist));
+                }
+
+                // Check if therapist exists
+                var existingTherapist = await _therapistRepository.GetByIdAsync(therapist.TherapistId);
+                if (existingTherapist == null)
+                {
+                    throw new ArgumentException($"Therapist with ID {therapist.TherapistId} not found.");
+                }
+                
+                // Update timestamp
+                therapist.UpdatedAt = DateTime.UtcNow;
+                
+                // Preserve creation timestamp
+                therapist.CreatedAt = existingTherapist.CreatedAt;
+                
+                await _therapistRepository.UpdateAsync(therapist);
+                return therapist;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating therapist with ID {TherapistId}", therapist?.TherapistId);
+                throw;
+            }
         }
 
         #endregion

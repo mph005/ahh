@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using MassageBooking.API.Models;
 
 namespace MassageBooking.API.DTOs
 {
@@ -18,7 +19,7 @@ namespace MassageBooking.API.DTOs
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public int Duration { get; set; }
-        public string Status { get; set; }
+        public AppointmentStatus Status { get; set; }
         public string Notes { get; set; }
         public decimal Price { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -31,11 +32,15 @@ namespace MassageBooking.API.DTOs
     public class AppointmentListItemDTO
     {
         public Guid AppointmentId { get; set; }
-        public string TherapistName { get; set; }
-        public string ServiceName { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public string Status { get; set; }
+        public Guid ClientId { get; set; }
+        public string ClientName { get; set; } = string.Empty;
+        public Guid TherapistId { get; set; }
+        public string TherapistName { get; set; } = string.Empty;
+        public Guid ServiceId { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
+        public AppointmentStatus Status { get; set; }
     }
 
     /// <summary>
@@ -47,6 +52,8 @@ namespace MassageBooking.API.DTOs
         public DateTime EndTime { get; set; }
         public Guid TherapistId { get; set; }
         public string TherapistName { get; set; }
+        public Guid ServiceId { get; set; }
+        public string ServiceName { get; set; }
         public int Duration { get; set; }
     }
 

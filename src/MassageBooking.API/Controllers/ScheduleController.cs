@@ -71,7 +71,7 @@ namespace MassageBooking.API.Controllers
                 else
                 {
                     // Get all active therapists
-                    var therapists = await _therapistService.GetAllTherapistsAsync();
+                    var therapists = await _therapistService.GetAllTherapistsListAsync();
                     
                     foreach (var therapist in therapists)
                     {
@@ -203,7 +203,7 @@ namespace MassageBooking.API.Controllers
                 TherapistName = a.TherapistName,
                 StartTime = a.StartTime,
                 EndTime = a.EndTime,
-                Status = a.Status
+                Status = a.Status.ToString()
             }).ToList();
         }
 

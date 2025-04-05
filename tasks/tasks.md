@@ -1,314 +1,91 @@
 # Development Tasks
 
-This document outlines the current development tasks for the Massage Therapy Booking System, organized by priority and phase.
-
-## Phase 1: Core Functionality
-
-The first phase focuses on establishing the essential booking and client management functionality.
-
-### High Priority Tasks
-
-#### Database Setup and Configuration
-
-- [x] **Task 1.1**: Create Azure SQL Database
-  - Create resource in Azure Portal ✅
-  - Configure firewall rules ✅
-  - Set up connection string in Key Vault ✅
-  - Estimated time: 2 hours
-
-- [x] **Task 1.2**: Design and implement database schema
-  - Create Entity Framework Core models ✅
-  - Configure relationships and constraints ✅
-  - Set up DbContext and connection ✅
-  - Create initial migration ✅
-  - Estimated time: 8 hours
-
-- [x] **Task 1.3**: Seed database with initial data
-  - Add service catalog ✅
-  - Create admin account ✅
-  - Configure test therapist accounts ✅
-  - Estimated time: 2 hours
-
-#### Authentication and User Management
-
-- [x] **Task 1.4**: Configure Azure AD B2C
-  - Set up tenant ✅
-  - Configure sign-up/sign-in policies ✅
-  - Create custom user attributes ✅
-  - Design branded login pages ✅
-  - Estimated time: 8 hours
-
-- [x] **Task 1.5**: Implement authentication in API
-  - Add authentication middleware ✅
-  - Configure JWT bearer token validation ✅
-  - Set up role-based authorization ✅
-  - Implement user registration flow ✅
-  - Estimated time: 6 hours
-
-#### API Development
-
-- [x] **Task 1.6**: Create User/Client API endpoints
-  - Implement user registration ✅
-  - Develop client profile management ✅
-  - Create controller with CRUD operations ✅
-  - Add validation rules ✅
-  - Estimated time: 6 hours
-
-- [x] **Task 1.7**: Create Service API endpoints
-  - Implement service catalog endpoints ✅
-  - Add CRUD operations for services (admin only) ✅
-  - Create filtering and pagination ✅
-  - Estimated time: 4 hours
-
-- [x] **Task 1.8**: Create Therapist API endpoints
-  - Implement therapist profile management ✅
-  - Add availability setting endpoints ✅
-  - Create CRUD operations ✅
-  - Estimated time: 6 hours
-
-- [x] **Task 1.9**: Create Appointment API endpoints
-  - Implement appointment creation logic ✅
-  - Add validation and business rules ✅
-  - Create appointment management endpoints ✅
-  - Implement availability checking ✅
-  - Estimated time: 10 hours
-
-- [x] **Task 1.10**: Implement error handling middleware
-  - Create consistent error response format ✅
-  - Add logging for exceptions ✅
-  - Implement appropriate HTTP status codes ✅
-  - Estimated time: 4 hours
-
-#### Frontend Development (Core)
-
-- [x] **Task 1.11**: Set up React application structure
-  - Initialize React project ✅
-  - Configure routing with React Router ✅
-  - Set up Material UI ✅
-  - Create layout components ✅
-  - Estimated time: 4 hours
-
-- [x] **Task 1.12**: Implement authentication UI
-  - Create login/signup forms ✅
-  - Integrate with Azure AD B2C ✅
-  - Handle token storage and refresh ✅
-  - Add authenticated routes protection ✅
-  - Estimated time: 8 hours
-
-- [x] **Task 1.13**: Create Service Browsing UI
-  - Implement service listing component ✅
-  - Add service details view ✅
-  - Create service selection for booking ✅
-  - Estimated time: 6 hours
-
-- [x] **Task 1.14**: Develop Appointment Booking Flow
-  - Create multi-step booking wizard ✅
-  - Implement therapist selection ✅
-  - Add date/time selection calendar ✅
-  - Create booking confirmation ✅
-  - Estimated time: 12 hours
-
-- [x] **Task 1.15**: Build Client Profile Management
-  - Create profile editing form ✅
-  - Implement form validation ✅
-  - Add profile view component ✅
-  - Estimated time: 4 hours
-
-### Medium Priority Tasks
-
-- [x] **Task 1.16**: Implement Appointment Management UI
-  - Create appointment list view ✅
-  - Add appointment details modal ✅
-  - Implement rescheduling and cancellation ✅
-  - Estimated time: 8 hours
-
-- [x] **Task 1.17**: Add Basic Reporting
-  - Create appointment calendar view ✅
-  - Implement daily schedule view ✅
-  - Add basic reporting for therapists ✅
-  - Estimated time: 6 hours
-
-- [x] **Task 1.18**: Develop Admin Dashboard
-  - Create admin dashboard layout ✅
-  - Implement service management UI ✅
-  - Add user management interface ✅
-  - Create appointment overview ✅
-  - Implement reporting and analytics features ✅
-  - Estimated time: 10 hours
-
-### Low Priority Tasks
-
-- [x] **Task 1.19**: Add Email Notifications
-  - Implement appointment confirmation emails ✅
-  - Add reminder notification logic ✅
-  - Create email templates ✅
-  - Configure SMTP settings ✅
-  - Estimated time: 6 hours
-
-- [ ] **Task 1.20**: Implement Logging and Monitoring
-  - Set up Application Insights
-  - Configure structured logging
-  - Add performance monitoring
-  - Create dashboard in Azure portal
-  - Implement alerting for critical system events
-  - Estimated time: 4 hours
-
-- [x] **Task 1.21**: Add Basic SOAP Notes
-  - Create SOAP note data model ✅
-  - Implement SOAP note repository and services ✅
-  - Create SOAP notes controller with API endpoints ✅
-  - Add view/edit capabilities ✅
-  - Implement note finalization/locking ✅
-  - Estimated time: 8 hours
-
-- [x] **Task 1.22**: Infrastructure as Code (Terraform)
-  - Create modular Terraform structure ✅
-  - Implement networking, compute, database modules ✅
-  - Add security and monitoring resources ✅
-  - Configure environment-specific deployments ✅
-  - Create documentation and examples ✅
-  - Estimated time: 12 hours
-
-## Project Status
-
-We have completed 21 out of 22 tasks in Phase 1, representing approximately 95% completion. The only remaining task is implementing logging and monitoring (Task 1.20).
-
-### Recently Completed Tasks
-
-1. **Appointment Calendar View (Task 1.17)** - Implemented a comprehensive weekly calendar visualization of appointments and available slots with color-coding for appointment status and integrated booking.
-
-2. **Admin Dashboard (Task 1.18)** - Created a comprehensive admin dashboard with appointment statistics, revenue reporting, and user management interfaces.
-
-3. **Email Notifications (Task 1.19)** - Implemented email service for sending appointment confirmations, reminders, and administrative notifications.
-
-4. **SOAP Notes (Task 1.21)** - Added the SOAP notes feature for therapists to document client treatments, including support for creating, editing, and finalizing treatment notes.
-
-5. **Availability Management** - Implemented the repository for managing therapist availability with support for both specific dates and recurring day-of-week patterns.
-
-6. **Infrastructure as Code (Task 1.22)** - Created a comprehensive Terraform implementation for automating the deployment and management of all Azure infrastructure components, including modular structures for networking, database, compute, security, and monitoring resources.
-
-## Phase 2 Preview Tasks (Future Development)
-
-These tasks are planned for Phase 2 and will be the next development focus after completing Task 1.20.
-
-### High Priority Phase 2 Tasks
-
-- [ ] **Task 2.1**: Advanced Analytics Dashboard
-  - Implement therapist performance metrics
-  - Create revenue analysis charts
-  - Add customer retention visualization
-  - Display appointment type distribution
-  - Estimated time: 8 hours
-
-- [ ] **Task 2.2**: Client Intake Forms
-  - Create customizable form templates
-  - Implement form builder for administrators
-  - Add secure storage for client responses
-  - Integrate with appointment workflow
-  - Estimated time: 12 hours
-
-- [ ] **Task 2.3**: Payment Processing Integration
-  - Integrate with Stripe/PayPal APIs
-  - Implement payment capture for bookings
-  - Add invoice generation
-  - Create refund processing capability
-  - Estimated time: 16 hours
-
-### Medium Priority Phase 2 Tasks
-
-- [ ] **Task 2.4**: Membership and Package Management
-  - Create membership models and repositories
-  - Implement service package bundles
-  - Add subscription billing integration
-  - Develop member dashboard features
-  - Estimated time: 10 hours
-
-- [ ] **Task 2.5**: Mobile Application Development
-  - Create React Native app structure
-  - Implement authentication
-  - Add appointment management
-  - Integrate push notifications
-  - Estimated time: 20 hours
-
-### Low Priority Phase 2 Tasks
-
-- [ ] **Task 2.6**: Marketing Features
-  - Implement email campaign system
-  - Add promotion code functionality
-  - Create client referral tracking
-  - Develop social media integration
-  - Estimated time: 8 hours
-
-- [ ] **Task 2.7**: Inventory Management
-  - Create product catalog
-  - Implement inventory tracking
-  - Add low stock alerts
-  - Integrate with point of sale
-  - Estimated time: 12 hours
-
-## Technical Debt Tasks
-
-- [ ] **TD-1**: Write unit tests for core business logic
-  - Create test project
-  - Add test cases for appointment booking
-  - Test availability calculation logic
-  - Estimated time: 8 hours
-
-- [x] **TD-2**: Improve API documentation
-  - Add XML comments to controllers ✅
-  - Configure Swagger UI ✅
-  - Create example requests/responses ✅
-  - Estimated time: 4 hours
-
-- [ ] **TD-3**: Optimize database queries
-  - Add appropriate indexes
-  - Review and optimize LINQ queries
-  - Implement caching for frequent queries
-  - Estimated time: 6 hours
-
-- [ ] **TD-4**: Infrastructure Documentation
-  - Document Terraform deployment process
-  - Create network architecture diagrams
-  - Document security controls and compliance
-  - Create environment management guidelines
-  - Estimated time: 4 hours
-
-## Development Process
-
-### Getting Started
-
-1. Clone the repository
-2. Set up development environment (see README.md)
-3. Run database migrations
-4. Start with high-priority tasks
-
-### Task Workflow
-
-1. Create a feature branch for each task
-2. Implement the required functionality
-3. Write tests for the implementation
-4. Submit a pull request for review
-5. Address feedback and merge
-
-### Definition of Done
-
-A task is considered complete when:
-
-- All requirements are implemented
-- Code follows the project's coding standards
-- Tests are written and passing
-- Documentation is updated
-- Code is reviewed and approved
-- Changes are merged to the main branch
-
-## Task Dependencies
-
-```
-Task 1.1 → Task 1.2 → Task 1.3
-Task 1.4 → Task 1.5 → Task 1.12
-Task 1.2 → Task 1.6, 1.7, 1.8, 1.9
-Task 1.11 → Task 1.12, 1.13, 1.14, 1.15
-Task 1.9 → Task 1.14, 1.16
-Task 1.6, 1.8 → Task 1.17
-Task 1.7, 1.6, 1.8 → Task 1.18
-```
+This document outlines the current development tasks and status for the Massage Therapy Booking System, focusing on the **local development environment**.
+
+## Completed Tasks (Focus: Identity Integration & Local Setup)
+
+These tasks were recently completed to integrate ASP.NET Core Identity and stabilize the local development workflow:
+
+- [x] **Task ID.1**: Install Identity Packages (`Microsoft.AspNetCore.Identity.EntityFrameworkCore`, etc.).
+- [x] **Task ID.2**: Define `ApplicationUser` model inheriting from `IdentityUser<Guid>`.
+- [x] **Task ID.3**: Update `ApplicationDbContext` to inherit from `IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>`.
+- [x] **Task ID.4**: Configure Identity services in `Program.cs` (`AddIdentity`, `AddEntityFrameworkStores`).
+- [x] **Task ID.5**: Configure Application Cookie behavior in `Program.cs` (Return 401/403 for API requests instead of redirect).
+- [x] **Task ID.6**: Resolve package version conflicts (`Microsoft.EntityFrameworkCore` v7 vs v9). Updated `.csproj` to use EF Core 9.0.3.
+- [x] **Task ID.7**: Resolve build errors (Missing `AuditLog` DbSet, missing `ApplicationUser` using, ambiguous `TherapistService` reference).
+- [x] **Task ID.8**: Resolve EF Core migration warnings (Shadow properties due to incorrect Fluent API configuration for `Availability`/`SoapNote` -> `Therapist` relationships in `DbContext`).
+- [x] **Task ID.9**: Create initial EF Core Migration (`AddIdentityTables`) including Identity schema changes.
+- [x] **Task ID.10**: Apply migration to database (`dotnet ef database update`), resolving issues with pre-existing tables by dropping and recreating the DB.
+- [x] **Task ID.11**: Implement database seeding logic in `Program.cs` for roles (Admin, Therapist, Client) and a default Admin user (using credentials from `appsettings.Development.json`).
+- [x] **Task ID.12**: Refactor `AuthController` to use `UserManager` and `SignInManager` for cookie-based login/logout, removing old JWT logic.
+- [x] **Task ID.13**: Fix frontend CORS issues by updating the policy in `Program.cs` (`AllowCredentials`).
+- [x] **Task ID.14**: Refactor frontend `apiClient.js`: Remove JWT interceptor, add `withCredentials: true`.
+- [x] **Task ID.15**: Refactor frontend `AuthContext.js`: Remove JWT/localStorage logic, manage state based on cookie session (using `/api/auth/userinfo`), fix login/logout logic.
+- [x] **Task ID.16**: Fix frontend routing/links (`App.js`) for Client and Therapist management pages, ensuring they are accessible to Admin users.
+
+---
+
+## Current Focus & Next Steps
+
+The immediate focus is solidifying the core application functionality within the local development environment using ASP.NET Core Identity.
+
+### High Priority
+
+- [ ] **Task Next.1**: Implement User Registration API Endpoint
+  - Add a `Register` method to `AuthController.cs`.
+  - Use `UserManager.CreateAsync` to create new users (Clients initially).
+  - Assign default role (e.g., "Client") upon registration.
+  - Define `RegisterRequestDTO` and `RegisterResponseDTO`.
+  - Add frontend registration form and connect it to the API.
+  - **Goal**: Allow new clients to self-register.
+- [ ] **Task Next.2**: Refine Authorization Rules
+  - Review all API controllers (`AppointmentsController`, `ClientsController`, `TherapistsController`, `ServicesController`, `SoapNotesController`).
+  - Apply appropriate `[Authorize]` attributes (with specific roles if needed) to actions based on intended user access (Admin, Therapist, Client, or authenticated user).
+  - Example: Clients should only get their *own* appointments/profile, Therapists their *own* schedule/SOAP notes, Admins have wider access.
+  - Test access control thoroughly for different roles.
+  - **Goal**: Ensure API endpoints are properly secured according to user roles.
+- [ ] **Task Next.3**: Implement Therapist/Client Data Seeding (Optional but Recommended)
+  - Extend the `SeedDatabaseAsync` logic in `Program.cs` (or create a separate `SeedData` class) to create a few sample Therapists and Clients if none exist.
+  - Potentially link sample therapists/clients to the default Admin user for testing, or create separate logins for them.
+  - **Goal**: Provide sample data for easier testing of features like booking, therapist lists, etc.
+- [ ] **Task Next.4**: Review and Fix Nullability Warnings
+  - Address the numerous CS86xx nullability warnings reported during the `dotnet build` process.
+  - Update DTOs, Models, Repository/Service method signatures, and implementation logic to correctly handle nullable reference types.
+  - This improves code robustness and prevents potential runtime `NullReferenceException` errors.
+  - **Goal**: Clean up build warnings and improve code quality.
+
+### Medium Priority
+
+- [ ] **Task Next.5**: Enhance Frontend UI/UX
+  - Review existing components (`ClientList`, `TherapistList`, `AppointmentList`, forms) for usability and appearance.
+  - Apply consistent styling (potentially integrate a UI library like Material UI or Bootstrap more deeply if desired).
+  - Improve loading states and error message presentation.
+  - **Goal**: Make the frontend more user-friendly and professional.
+- [ ] **Task Next.6**: Implement Missing Core Features (if any)
+  - Review original requirements/user stories against implemented features.
+  - Identify and prioritize any critical missing pieces (e.g., full SOAP Note editing flow, detailed Availability management UI for therapists).
+  - **Goal**: Ensure core product requirements are met.
+
+### Low Priority (Local Focus)
+
+- [ ] **Task Next.7**: Implement Logging/Monitoring (Local)
+  - Configure Serilog or use built-in `ILogger` more extensively for structured logging to the console/debug output.
+  - Add more detailed logging in key service methods and error handlers.
+  - **Goal**: Improve visibility into application behavior during local development/debugging.
+- [ ] **Task Next.8**: Unit/Integration Testing Setup
+  - Create or update test projects (`.Tests`).
+  - Set up mocking frameworks (e.g., Moq).
+  - Write basic unit tests for key service logic.
+  - Consider setting up an in-memory database provider for integration tests.
+  - **Goal**: Establish a foundation for automated testing.
+
+---
+
+## Removed/Deferred Tasks (Cloud/Infrastructure Focus)
+
+- Setting up Azure resources (SQL DB, App Service, Static Web App, AAD B2C, Key Vault, etc.).
+- Implementing Infrastructure as Code using Terraform.
+- Configuring CI/CD pipelines (Azure DevOps).
+- Advanced cloud monitoring/alerting (Application Insights).
+
+(These can be revisited if the project focus shifts back to cloud deployment in the future.)

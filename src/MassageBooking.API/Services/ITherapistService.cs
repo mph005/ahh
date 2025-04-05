@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MassageBooking.API.DTOs;
+using MassageBooking.API.Models;
 
 namespace MassageBooking.API.Services
 {
@@ -21,7 +22,13 @@ namespace MassageBooking.API.Services
         /// Gets all therapists
         /// </summary>
         /// <returns>List of all therapists</returns>
-        Task<List<TherapistListItemDTO>> GetAllTherapistsAsync();
+        Task<List<TherapistListItemDTO>> GetAllTherapistsListAsync();
+        
+        /// <summary>
+        /// Gets all active therapists
+        /// </summary>
+        /// <returns>List of active therapists</returns>
+        Task<IEnumerable<TherapistListItemDTO>> GetActiveTherapistsAsync();
         
         /// <summary>
         /// Gets all services offered by a therapist
@@ -70,6 +77,13 @@ namespace MassageBooking.API.Services
         Task<OperationResultDTO> UpdateTherapistAsync(Guid therapistId, UpdateTherapistDTO request);
         
         /// <summary>
+        /// Deletes a therapist (soft delete recommended)
+        /// </summary>
+        /// <param name="therapistId">The therapist ID</param>
+        /// <returns>Result of the operation</returns>
+        Task<OperationResultDTO> DeleteTherapistAsync(Guid therapistId);
+        
+        /// <summary>
         /// Adds a service to a therapist's offered services
         /// </summary>
         /// <param name="therapistId">The therapist ID</param>
@@ -84,5 +98,10 @@ namespace MassageBooking.API.Services
         /// <param name="serviceId">The service ID</param>
         /// <returns>Result of the operation</returns>
         Task<OperationResultDTO> RemoveServiceFromTherapistAsync(Guid therapistId, Guid serviceId);
+
+        /// <summary>
+        /// Gets a therapist entity by ID (used internally for updates)
+        /// </summary>
+        Task<Therapist?> GetTherapistEntityByIdAsync(Guid therapistId);
     }
 } 

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using MassageBooking.API.Services;
 using MassageBooking.API.DTOs;
+using MassageBooking.API.Models;
 
 namespace MassageBooking.API.Controllers
 {
@@ -19,75 +20,20 @@ namespace MassageBooking.API.Controllers
         private readonly ITherapistService _therapistService;
         private readonly IClientService _clientService;
         private readonly ILogger<AdminController> _logger;
+        private readonly IAdminService _adminService;
 
         public AdminController(
             IAppointmentService appointmentService,
             ITherapistService therapistService,
             IClientService clientService,
-            ILogger<AdminController> logger)
+            ILogger<AdminController> logger,
+            IAdminService adminService)
         {
             _appointmentService = appointmentService ?? throw new ArgumentNullException(nameof(appointmentService));
             _therapistService = therapistService ?? throw new ArgumentNullException(nameof(therapistService));
             _clientService = clientService ?? throw new ArgumentNullException(nameof(clientService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        /// <summary>
-        /// Gets summary statistics for the dashboard
-        /// </summary>
-        /// <returns>Dashboard statistics</returns>
-        [HttpGet("dashboard")]
-        public async Task<ActionResult<DashboardStatsDTO>> GetDashboardStats()
-        {
-            try
-            {
-                // Get appointment stats for the current month
-                var today = DateTime.Today;
-                var startOfMonth = new DateTime(today.Year, today.Month, 1);
-                var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
-                
-                var monthlyAppointments = await _appointmentService.GetAppointmentsInRangeAsync(startOfMonth, endOfMonth);
-                
-                // Get totals
-                var activeTherapistsCount = (await _therapistService.GetAllTherapistsAsync())
-                    .Count(t => t.IsActive);
-                
-                var totalClientsCount = await _clientService.GetClientCountAsync();
-                
-                // Calculate statistics
-                var completedAppointments = monthlyAppointments.Count(a => a.Status == "Completed");
-                var cancelledAppointments = monthlyAppointments.Count(a => a.Status == "Cancelled");
-                var upcomingAppointments = monthlyAppointments.Count(a => a.Status == "Scheduled" && a.StartTime > today);
-                
-                // Group appointments by day for the chart data
-                var appointmentsByDay = monthlyAppointments
-                    .GroupBy(a => a.StartTime.Date)
-                    .Select(g => new DailyAppointmentCountDTO
-                    {
-                        Date = g.Key,
-                        Count = g.Count()
-                    })
-                    .OrderBy(d => d.Date)
-                    .ToList();
-                
-                var stats = new DashboardStatsDTO
-                {
-                    TotalAppointmentsThisMonth = monthlyAppointments.Count,
-                    CompletedAppointmentsThisMonth = completedAppointments,
-                    CancelledAppointmentsThisMonth = cancelledAppointments,
-                    UpcomingAppointments = upcomingAppointments,
-                    ActiveTherapistsCount = activeTherapistsCount,
-                    TotalClientsCount = totalClientsCount,
-                    DailyAppointmentCounts = appointmentsByDay
-                };
-                
-                return Ok(stats);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving dashboard statistics");
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
+            _adminService = adminService ?? throw new ArgumentNullException(nameof(adminService));
         }
 
         /// <summary>
@@ -111,9 +57,9 @@ namespace MassageBooking.API.Controllers
                 var appointments = await _appointmentService.GetAppointmentsInRangeAsync(startDate, endDate);
                 
                 // Calculate statistics
-                var completedAppointments = appointments.Count(a => a.Status == "Completed");
-                var cancelledAppointments = appointments.Count(a => a.Status == "Cancelled");
-                var noShowAppointments = appointments.Count(a => a.Status == "No-Show");
+                var completedAppointments = appointments.Count(a => a.Status == AppointmentStatus.Completed);
+                var cancelledAppointments = appointments.Count(a => a.Status == AppointmentStatus.Cancelled);
+                var noShowAppointments = appointments.Count(a => a.Status == AppointmentStatus.NoShow);
                 
                 // Group by service
                 var appointmentsByService = appointments
@@ -122,9 +68,9 @@ namespace MassageBooking.API.Controllers
                     {
                         ServiceName = g.Key,
                         Count = g.Count(),
-                        CompletedCount = g.Count(a => a.Status == "Completed"),
-                        CancelledCount = g.Count(a => a.Status == "Cancelled"),
-                        NoShowCount = g.Count(a => a.Status == "No-Show")
+                        CompletedCount = g.Count(a => a.Status == AppointmentStatus.Completed),
+                        CancelledCount = g.Count(a => a.Status == AppointmentStatus.Cancelled),
+                        NoShowCount = g.Count(a => a.Status == AppointmentStatus.NoShow)
                     })
                     .OrderByDescending(s => s.Count)
                     .ToList();
@@ -137,9 +83,9 @@ namespace MassageBooking.API.Controllers
                         TherapistId = g.Key.TherapistId,
                         TherapistName = g.Key.TherapistName,
                         Count = g.Count(),
-                        CompletedCount = g.Count(a => a.Status == "Completed"),
-                        CancelledCount = g.Count(a => a.Status == "Cancelled"),
-                        NoShowCount = g.Count(a => a.Status == "No-Show")
+                        CompletedCount = g.Count(a => a.Status == AppointmentStatus.Completed),
+                        CancelledCount = g.Count(a => a.Status == AppointmentStatus.Cancelled),
+                        NoShowCount = g.Count(a => a.Status == AppointmentStatus.NoShow)
                     })
                     .OrderByDescending(t => t.Count)
                     .ToList();
@@ -148,7 +94,7 @@ namespace MassageBooking.API.Controllers
                 {
                     StartDate = startDate,
                     EndDate = endDate,
-                    TotalAppointments = appointments.Count,
+                    TotalAppointments = appointments.Count(),
                     CompletedAppointments = completedAppointments,
                     CancelledAppointments = cancelledAppointments,
                     NoShowAppointments = noShowAppointments,
@@ -188,7 +134,7 @@ namespace MassageBooking.API.Controllers
                 
                 // Filter only completed appointments for revenue
                 var completedAppointments = appointments
-                    .Where(a => a.Status == "Completed")
+                    .Where(a => a.Status == AppointmentStatus.Completed)
                     .ToList();
                 
                 // Calculate total revenue
@@ -256,10 +202,10 @@ namespace MassageBooking.API.Controllers
                 {
                     StartDate = startDate,
                     EndDate = endDate,
-                    TotalAppointments = completedAppointments.Count,
+                    TotalAppointments = completedAppointments.Count(),
                     TotalRevenue = totalRevenue,
-                    AverageRevenuePerAppointment = completedAppointments.Count > 0 ? 
-                        totalRevenue / completedAppointments.Count : 0,
+                    AverageRevenuePerAppointment = completedAppointments.Count() > 0 ? 
+                        totalRevenue / completedAppointments.Count() : 0,
                     RevenueByService = revenueByService,
                     RevenueByTherapist = revenueByTherapist,
                     RevenueByPeriod = revenueByPeriod
@@ -314,6 +260,20 @@ namespace MassageBooking.API.Controllers
                 _logger.LogError(ex, "Error retrieving audit logs");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
+        }
+
+        [HttpGet("dashboard-stats")]
+        public async Task<ActionResult<AdminDashboardStatsDTO>> GetDashboardStats()
+        {
+            _logger.LogInformation("Fetching admin dashboard stats.");
+            
+            // Call the service method
+            var stats = await _adminService.GetDashboardStatsAsync();
+
+            // Consider adding error handling if service throws exceptions, 
+            // though global exception handling might cover this.
+            
+            return Ok(stats);
         }
     }
 } 

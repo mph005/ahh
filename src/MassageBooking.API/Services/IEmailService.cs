@@ -62,5 +62,9 @@ namespace MassageBooking.API.Services
         /// <param name="client">Client information</param>
         /// <returns>True if the email was sent successfully, false otherwise</returns>
         Task<bool> SendWelcomeEmailAsync(Client client);
+
+        Task SendAppointmentRescheduleAsync(Appointment appointment, Client client, Therapist therapist, Service service);
+
+        Task SendPasswordResetEmailAsync(string email, string resetToken);
     }
 } 

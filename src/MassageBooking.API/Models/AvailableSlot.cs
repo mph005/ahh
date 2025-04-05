@@ -26,5 +26,20 @@ namespace MassageBooking.API.Models
         /// The name of the therapist available for this slot
         /// </summary>
         public string TherapistName { get; set; }
+        
+        /// <summary>
+        /// The ID of the service available for this slot
+        /// </summary>
+        public Guid ServiceId { get; set; }
+        
+        /// <summary>
+        /// The name of the service available for this slot
+        /// </summary>
+        public string ServiceName { get; set; }
+        
+        /// <summary>
+        /// The duration of the service available for this slot
+        /// </summary>
+        public int Duration { get; set; }
     }
 } 

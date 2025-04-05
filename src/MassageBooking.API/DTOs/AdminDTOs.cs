@@ -332,4 +332,18 @@ namespace MassageBooking.API.DTOs
         /// </summary>
         public string Details { get; set; }
     }
+
+    public class AdminDashboardStatsDTO
+    {
+        public int TotalClients { get; set; }
+        public int ActiveClients { get; set; }
+        public int TotalTherapists { get; set; }
+        public int ActiveTherapists { get; set; }
+        public int UpcomingAppointments { get; set; }
+        public int CompletedAppointmentsToday { get; set; }
+        public decimal TotalRevenueToday { get; set; }
+        // Add more stats as needed
+    }
+    
+    // Add other Admin specific DTOs here later if needed
 } 

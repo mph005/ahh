@@ -1,353 +1,96 @@
 # Massage Therapy Booking System
 
-This is a comprehensive booking system for massage therapy services that supports client, therapist, and admin user workflows.
-
-## Appointment Booking Implementation
-
-The appointment booking functionality has been implemented using ASP.NET Core and Entity Framework Core, following the repository pattern and service layer architecture.
-
-### Key Components
-
-#### Models & DTOs
-- `Appointment`: Core entity for appointment data
-- `AvailableSlot`: Model for representing available time slots
-- Various DTOs to support API operations:
-  - `AppointmentDetailsDTO`: Complete appointment details
-  - `AppointmentListItemDTO`: Simplified appointment information for lists
-  - `AvailableSlotDTO`: Available time slot information
-  - `AppointmentBookingDTO`: Request model for booking
-  - `AppointmentRescheduleDTO`: Request model for rescheduling
-  - `RebookRequestDTO`: Request model for rebooking
-  - `BookingResultDTO`: Response model for booking operations
-
-#### Data Access Layer
-- `IAppointmentRepository`: Interface defining data access operations
-- `AppointmentRepository`: Implementation using Entity Framework Core
-- Key methods:
-  - Finding available time slots based on therapist availability
-  - Checking for scheduling conflicts
-  - Getting a therapist's schedule for a specific date range
-  - CRUD operations for appointment management
-
-#### Business Logic Layer
-- `IAppointmentService`: Interface defining business operations
-- `AppointmentService`: Implementation of appointment-related business logic
-- Responsibilities:
-  - Validation of booking/rescheduling requests
-  - Coordination between repositories
-  - Transformation between entities and DTOs
-  - Error handling and logging
-
-#### API Layer
-- `AppointmentsController`: REST API for appointment operations
-- Endpoints:
-  - GET /api/appointments/{id}: Get appointment details
-  - GET /api/appointments/client/{clientId}: Get client appointments
-  - GET /api/appointments/therapist/{therapistId}: Get therapist schedule
-  - GET /api/appointments/available-slots: Find available slots
-  - POST /api/appointments: Book a new appointment
-  - PUT /api/appointments/reschedule: Reschedule an appointment
-  - PUT /api/appointments/{id}/cancel: Cancel an appointment
-  - POST /api/appointments/rebook: Rebook a previous appointment
-
-### Key Features
-
-1. **Available Slot Finding**
-   - Considers therapist availability schedules
-   - Accounts for service duration
-   - Filters out conflicting appointments
-   - Supports filtering by specific therapist
-
-2. **Conflict Detection**
-   - Prevents double-booking
-   - Handles appointment overlap scenarios
-   - Supports exclusion of current appointment for reschedule operations
-
-3. **Therapist Schedule Management**
-   - Retrieves appointments for a specific date range
-   - Includes all relevant appointment details
-
-4. **Client Booking Experience**
-   - Select available slots based on service and preferred therapist
-   - Book, reschedule, and cancel appointments
-   - View appointment history
-   - Rebook previous services
-
-5. **Appointment Calendar View**
-   - Weekly visualization of appointments and available slots
-   - Color-coded appointment status visualization
-   - Available slot highlighting and integrated booking
-   - Week navigation with responsive design
-
-## Availability Management
-
-The availability management system allows therapists to set their working hours and manage their schedule:
-
-### Key Components
-
-#### Models
-- `Availability`: Entity representing therapist availability for specific dates or recurring days
-- Properties include:
-  - Date-specific or recurring day-of-week settings
-  - Work hours (start/end times)
-  - Break times
-  - Availability status
-
-#### Repository Layer
-- `IAvailabilityRepository`: Interface for availability data operations
-- `AvailabilityRepository`: Implementation using Entity Framework Core
-- Key methods:
-  - Get availability for specific dates or days of week
-  - Upsert (create/update) availability settings
-  - Delete availability records
-
-#### Integration with Booking
-- Appointment booking system checks against therapist availability
-- Prevents booking outside of working hours
-- Accounts for breaks and time off
-
-## SOAP Notes System
-
-The SOAP Notes feature allows therapists to document client treatments following the standardized SOAP method:
-
-### Key Components
-
-#### Models
-- `SoapNote`: Entity for treatment documentation
-- Properties include:
-  - Subjective (client reported symptoms/concerns)
-  - Objective (therapist observations)
-  - Assessment (therapist's evaluation)
-  - Plan (treatment recommendations)
-  - Areas of focus, techniques used, and pressure level
-  - Finalization status
-
-#### Repository Layer
-- `ISoapNoteRepository`: Interface for SOAP note data operations
-- `SoapNoteRepository`: Implementation using Entity Framework Core
-- Operations include:
-  - Create, read, update, delete notes
-  - Get notes by appointment, client, or therapist
-  - Finalize notes to prevent further edits
-
-#### API Layer
-- `SoapNotesController`: Endpoints for managing SOAP notes
-- Supports all CRUD operations with appropriate access controls
-
-## Admin Dashboard
-
-The comprehensive admin dashboard provides insights and management tools:
-
-### Key Components
-
-#### Dashboard Features
-- Summary statistics (appointments, clients, revenue)
-- Visual charts for appointment trends
-- Quick access to common actions
-
-#### Reporting Tools
-- Appointment reports by date, therapist, or service
-- Revenue reports with service and therapist breakdowns
-- Period comparisons and export capabilities
-
-#### User Management
-- Client and therapist profile management
-- Activity logging and permissions management
-
-#### API Layer
-- `AdminController`: Endpoints for dashboard data and reports
-- Data aggregation and reporting logic
-
-## Email Notification System
-
-The email notification system ensures timely communication with clients and therapists:
-
-### Key Components
-
-#### Email Service
-- `IEmailService`: Interface for email operations
-- `EmailService`: Implementation with SMTP integration
-- Email types:
-  - Appointment confirmation
-  - Appointment reminders
-  - Cancellation notifications
-  - Welcome emails
-  - Password reset
-
-#### Configuration
-- SMTP settings in appsettings.json
-- HTML email templates
-- Tracking of email sending status
-
-#### Integration Points
-- Triggered automatically by appointment events
-- User registration flow
-- Password reset process
-
-## Technology Stack
-
-- ASP.NET Core 6.0
-- Entity Framework Core 6.0
-- SQL Server
-- Swagger for API documentation
-
-## Getting Started
-
-1. Clone the repository
-2. Ensure SQL Server is installed
-3. Update the connection string in `appsettings.json` if needed
-4. Run `dotnet ef database update` to create the database
-5. Run `dotnet run` to start the application
-6. Access the Swagger UI at `https://localhost:5001/swagger`
-
-## User Stories Implemented
-
-- **As a client, I want to see available appointment times so that I can book a massage**
-- **As a client, I want to select my preferred massage therapist so that I can continue with someone I like**
-- **As a client, I want to choose from different massage services so that I get the right treatment**
-- **As a client, I want to reschedule or cancel my appointment if my plans change**
-- **As a client, I want to view my past appointments so I can track my treatment history**
-- **As a client, I want to rebook previous services easily so I don't have to enter all the details again**
-- **As a therapist, I want to see my upcoming appointments for the day/week**
-- **As a therapist, I want to view client information before appointments so I can prepare**
-- **As a therapist, I want to manage my availability so clients can only book when I'm working**
-- **As a therapist, I want to document treatments using SOAP notes to track client progress**
-- **As an admin, I want to see business metrics and reports to make informed decisions**
-- **As a user, I want to receive email notifications about appointments to stay informed**
+This is a comprehensive booking system for massage therapy services that supports client, therapist, and admin user workflows. It includes a backend API built with ASP.NET Core and a frontend client built with React.
 
 ## Project Overview
 
 This system allows massage therapists to manage their practice efficiently with features including:
 
 - Online appointment booking and management
-- Weekly appointment calendar view with availability visualization
-- Client profiles and history tracking
-- SOAP notes and intake forms
 - Therapist availability management
+- Client profiles and history tracking
+- SOAP notes for treatment documentation
 - Service management
-- Email notifications
-- Admin dashboard with reporting
-- User management system
+- Email notifications (via a configured service)
+- Admin dashboard with reporting capabilities
+- User management system with role-based access control
 
 ## Technology Stack
 
-### Backend
-- **Framework**: ASP.NET Core 7 Web API
-- **Database**: Azure SQL Database
-- **ORM**: Entity Framework Core
-- **Authentication**: Azure Active Directory B2C
-- **Cloud Infrastructure**: Microsoft Azure PaaS services
+### Backend API (`src/MassageBooking.API`)
+- **Framework**: ASP.NET Core 9 Web API
+- **Database**: SQL Server (using LocalDB for development)
+- **ORM**: Entity Framework Core 9
+- **Database Management**: EF Core Migrations
+- **Authentication/Authorization**: ASP.NET Core Identity (Cookie-based)
+- **API Documentation**: Swagger/OpenAPI
 
-### Frontend
-- **Framework**: React.js
-- **UI Library**: Material UI
-- **State Management**: React Context API
+### Frontend Client (`src/massage-booking-client`)
+- **Framework**: React.js (likely Create React App based)
+- **State Management**: React Context API (`AuthContext.js`)
 - **Routing**: React Router
 - **API Client**: Axios
+- **UI**: Basic structure, likely needs styling improvements
 
-### DevOps
-- **Source Control**: Git
-- **CI/CD**: Azure DevOps
-- **Hosting**: Azure App Service & Azure Static Web Apps
-- **Monitoring**: Azure Application Insights
+### Development Environment
+- **IDE**: Visual Studio / VS Code
+- **SDK**: .NET 9 SDK
+- **Database Server**: SQL Server LocalDB (installed with Visual Studio or separately)
+- **Package Managers**: NuGet (Backend), npm or yarn (Frontend)
 
-## Architecture
-
-The application follows a layered architecture pattern:
-
-1. **Presentation Layer**: React SPA
-2. **API Layer**: ASP.NET Core Web API
-3. **Service Layer**: Business logic and validation
-4. **Data Access Layer**: Entity Framework Core repositories
-5. **Database Layer**: Azure SQL Database
-
-See [Architecture Document](./docs/architecture.md) for detailed architecture information.
-
-## Getting Started
+## Getting Started (Local Development)
 
 ### Prerequisites
-- [.NET 7 SDK](https://dotnet.microsoft.com/download/dotnet/7.0)
-- [Node.js](https://nodejs.org/) (v16+)
-- [npm](https://www.npmjs.com/) (v8+)
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-- [Visual Studio 2022](https://visualstudio.microsoft.com/) or [Visual Studio Code](https://code.visualstudio.com/)
+- .NET 9 SDK
+- Node.js and npm/yarn
+- SQL Server (LocalDB is sufficient for default setup)
+- A code editor like Visual Studio 2022+ or VS Code
 
-### Local Development Setup
+### Backend Setup (`src/MassageBooking.API`)
+1.  **Navigate to API Directory:** `cd src/MassageBooking.API`
+2.  **Restore Dependencies:** `dotnet restore`
+3.  **Configure Database:** The default connection string in `appsettings.Development.json` points to `(localdb)\mssqllocaldb`. Ensure this server is running. You can manage LocalDB instances via Visual Studio's SQL Server Object Explorer or using `SqlLocalDB.exe` command line tool.
+4.  **Apply Migrations:** `dotnet ef database update` (This creates the database `MassageBookingDb` if it doesn't exist and applies all migrations).
+5.  **Configure Admin User (First Run):** Edit `appsettings.Development.json` and provide an email and strong password under the `DefaultAdminUser` section. This user will be created and assigned the 'Admin' role on the first run in Development mode.
+    ```json
+    "DefaultAdminUser": {
+      "Email": "admin@example.com",
+      "Password": "YourSecurePassword123!"
+    }
+    ```
+6.  **Run the API:** `dotnet run`. The API should now be accessible at `https://localhost:5001` and `http://localhost:5000`.
+7.  **API Documentation:** Access the Swagger UI at `https://localhost:5001/swagger`.
 
-1. **Clone the repository**
-   ```
-   git clone https://github.com/yourusername/massage-booking-system.git
-   cd massage-booking-system
-   ```
+### Frontend Setup (`src/massage-booking-client`)
+1.  **Navigate to Client Directory:** `cd src/massage-booking-client`
+2.  **Install Dependencies:** `npm install` (or `yarn install`)
+3.  **Run the Client:** `npm start` (or `yarn start`). This should open the application in your browser, typically at `http://localhost:3000`.
+4.  **Proxy:** The `package.json` likely contains a `proxy` setting pointing to the backend API (`https://localhost:5001`). This allows the frontend development server to forward API requests to the backend, avoiding CORS issues during development.
 
-2. **Set up backend**
-   ```
-   cd src/MassageBooking.API
-   dotnet restore
-   ```
+### Login
+- Once both backend and frontend are running, navigate to the frontend URL (`http://localhost:3000`).
+- Use the login link and the admin credentials you configured in the backend's `appsettings.Development.json`.
 
-3. **Set up frontend**
-   ```
-   cd src/massage-booking-client
-   npm install
-   ```
+## Key Features Implemented (Relevant to Current State)
 
-4. **Configure local settings**
-   - Create `appsettings.Development.json` in the API project
-   - Update connection strings and configuration values
+- **Core Models:** Client, Therapist, Service, Appointment, Availability, SoapNote.
+- **Repositories:** EF Core implementations for data access.
+- **Services:** Business logic layer for core entities.
+- **API Controllers:** Endpoints for managing core entities.
+- **Authentication:** ASP.NET Core Identity setup with cookie-based authentication.
+- **Authorization:** Role-based access control (`[Authorize(Roles = "...")]`) implemented on controllers/actions (e.g., Admin dashboard, Client/Therapist management).
+- **Database Seeding:** Basic seeding for roles and a default admin user (Development only).
+- **Frontend Basics:** React client with routing, components for Login, Admin Dashboard, Client List, Therapist List, Appointments.
+- **Frontend Auth Context:** Manages authentication state using cookies.
 
-5. **Run database migrations**
-   ```
-   cd src/MassageBooking.API
-   dotnet ef database update
-   ```
+## Development Focus
 
-6. **Start the application**
-   - Run the API: `dotnet run`
-   - In a separate terminal, run the frontend: `npm start`
+- Current efforts are focused on **local development and deployment**.
+- Cloud deployment (Azure) and Infrastructure as Code (Terraform) have been **removed** for now.
 
-### Azure Deployment
+## User Roles
 
-See the [Deployment Guide](./docs/deployment.md) for detailed instructions on deploying to Azure.
-
-## Code Organization
-
-The solution follows these design patterns and principles:
-
-- **Clean Architecture**: Separation of concerns with distinct layers
-- **Repository Pattern**: Data access abstraction
-- **CQRS (Light)**: Separation of read and write operations
-- **Dependency Injection**: For loose coupling of components
-- **RESTful API Design**: Standard HTTP methods and status codes
-
-Folder structure:
-```
-/src
-  /MassageBooking.API           # Web API project
-    /Controllers                # API endpoints
-    /Models                     # DTOs and view models
-    /Services                   # Business logic
-    /Data                       # EF context and migrations
-    /Config                     # Configuration classes
-    /Extensions                 # Service extension methods
-  
-  /massage-booking-client       # React frontend
-    /src
-      /components               # Reusable UI components
-      /pages                    # Page components
-      /contexts                 # React context providers
-      /api                      # API client services
-      /hooks                    # Custom React hooks
-      /utils                    # Utility functions
-```
-
-## Development Guidelines
-
-- Follow the [Technical Specifications](./docs/technical.md) for coding standards
-- Check [Current Tasks](./tasks/tasks.md) for development priorities
-- Add unit tests for all business logic
-- Document public APIs and components
-
-## License
-
-This project is proprietary software. All rights reserved.
+- **Admin:** Full access, manages users, services, views reports.
+- **Therapist:** Manages own schedule, appointments, and SOAP notes.
+- **Client:** Books and manages own appointments.
+(Note: Detailed permissions are enforced via `[Authorize]` attributes in the API).

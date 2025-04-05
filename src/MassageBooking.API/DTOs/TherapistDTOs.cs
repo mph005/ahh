@@ -166,10 +166,17 @@ namespace MassageBooking.API.DTOs
     public class UpdateTherapistDTO
     {
         /// <summary>
+        /// The therapist's unique identifier
+        /// </summary>
+        [Required]
+        public Guid TherapistId { get; set; }
+        
+        /// <summary>
         /// The therapist's first name
         /// </summary>
-        [MaxLength(50)]
-        public string FirstName { get; set; }
+        [Required]
+        [StringLength(50)]
+        public string FirstName { get; set; } = string.Empty;
         
         /// <summary>
         /// The therapist's last name
@@ -211,41 +218,5 @@ namespace MassageBooking.API.DTOs
         /// Whether the therapist is active
         /// </summary>
         public bool? IsActive { get; set; }
-    }
-
-    /// <summary>
-    /// DTO for service information
-    /// </summary>
-    public class ServiceDTO
-    {
-        /// <summary>
-        /// The service's unique identifier
-        /// </summary>
-        public Guid ServiceId { get; set; }
-        
-        /// <summary>
-        /// The name of the service
-        /// </summary>
-        public string Name { get; set; }
-        
-        /// <summary>
-        /// Description of the service
-        /// </summary>
-        public string Description { get; set; }
-        
-        /// <summary>
-        /// Duration of the service in minutes
-        /// </summary>
-        public int Duration { get; set; }
-        
-        /// <summary>
-        /// Price of the service
-        /// </summary>
-        public decimal Price { get; set; }
-        
-        /// <summary>
-        /// Whether the service is active
-        /// </summary>
-        public bool IsActive { get; set; }
     }
 } 

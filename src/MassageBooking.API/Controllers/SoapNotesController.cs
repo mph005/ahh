@@ -8,6 +8,7 @@ using MassageBooking.API.Services;
 using MassageBooking.API.DTOs;
 using MassageBooking.API.Data.Repositories;
 using MassageBooking.API.Models;
+using AutoMapper;
 
 namespace MassageBooking.API.Controllers
 {
@@ -21,19 +22,22 @@ namespace MassageBooking.API.Controllers
         private readonly ITherapistRepository _therapistRepository;
         private readonly IClientRepository _clientRepository;
         private readonly ILogger<SoapNotesController> _logger;
+        private readonly IMapper _mapper;
 
         public SoapNotesController(
             ISoapNoteRepository soapNoteRepository,
             IAppointmentRepository appointmentRepository,
             ITherapistRepository therapistRepository,
             IClientRepository clientRepository,
-            ILogger<SoapNotesController> logger)
+            ILogger<SoapNotesController> logger,
+            IMapper mapper)
         {
             _soapNoteRepository = soapNoteRepository ?? throw new ArgumentNullException(nameof(soapNoteRepository));
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _therapistRepository = therapistRepository ?? throw new ArgumentNullException(nameof(therapistRepository));
             _clientRepository = clientRepository ?? throw new ArgumentNullException(nameof(clientRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         /// <summary>
@@ -41,7 +45,7 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="id">The SOAP note ID</param>
         /// <returns>The SOAP note details</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:guid}")]
         [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<SoapNoteDTO>> GetById(Guid id)
         {
@@ -53,7 +57,7 @@ namespace MassageBooking.API.Controllers
                     return NotFound();
                 }
 
-                return Ok(MapToSoapNoteDTO(soapNote));
+                return Ok(_mapper.Map<SoapNoteDTO>(soapNote));
             }
             catch (Exception ex)
             {
@@ -67,23 +71,23 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="appointmentId">The appointment ID</param>
         /// <returns>The SOAP note for the appointment</returns>
-        [HttpGet("appointment/{appointmentId}")]
+        [HttpGet("appointment/{appointmentId:guid}")]
         [Authorize(Roles = "Admin,Therapist")]
-        public async Task<ActionResult<SoapNoteDTO>> GetByAppointmentId(Guid appointmentId)
+        public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByAppointmentId(Guid appointmentId)
         {
             try
             {
-                var soapNote = await _soapNoteRepository.GetByAppointmentIdAsync(appointmentId);
-                if (soapNote == null)
+                var soapNotes = await _soapNoteRepository.GetByAppointmentIdAsync(appointmentId);
+                if (soapNotes == null)
                 {
                     return NotFound();
                 }
 
-                return Ok(MapToSoapNoteDTO(soapNote));
+                return Ok(_mapper.Map<IEnumerable<SoapNoteListItemDTO>>(soapNotes));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving SOAP note for appointment {AppointmentId}", appointmentId);
+                _logger.LogError(ex, "Error retrieving SOAP notes for appointment {AppointmentId}", appointmentId);
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
@@ -93,14 +97,14 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="clientId">The client ID</param>
         /// <returns>List of SOAP notes for the client</returns>
-        [HttpGet("client/{clientId}")]
+        [HttpGet("client/{clientId:guid}")]
         [Authorize(Roles = "Admin,Therapist")]
-        public async Task<ActionResult<List<SoapNoteListItemDTO>>> GetByClientId(Guid clientId)
+        public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByClientId(Guid clientId)
         {
             try
             {
                 var soapNotes = await _soapNoteRepository.GetByClientIdAsync(clientId);
-                return Ok(soapNotes.ConvertAll(s => MapToSoapNoteListItemDTO(s)));
+                return Ok(_mapper.Map<IEnumerable<SoapNoteListItemDTO>>(soapNotes));
             }
             catch (Exception ex)
             {
@@ -114,14 +118,14 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="therapistId">The therapist ID</param>
         /// <returns>List of SOAP notes created by the therapist</returns>
-        [HttpGet("therapist/{therapistId}")]
+        [HttpGet("therapist/{therapistId:guid}")]
         [Authorize(Roles = "Admin,Therapist")]
-        public async Task<ActionResult<List<SoapNoteListItemDTO>>> GetByTherapistId(Guid therapistId)
+        public async Task<ActionResult<IEnumerable<SoapNoteListItemDTO>>> GetByTherapistId(Guid therapistId)
         {
             try
             {
                 var soapNotes = await _soapNoteRepository.GetByTherapistIdAsync(therapistId);
-                return Ok(soapNotes.ConvertAll(s => MapToSoapNoteListItemDTO(s)));
+                return Ok(_mapper.Map<IEnumerable<SoapNoteListItemDTO>>(soapNotes));
             }
             catch (Exception ex)
             {
@@ -186,8 +190,8 @@ namespace MassageBooking.API.Controllers
                     IsFinalized = false
                 };
 
-                var createdNote = await _soapNoteRepository.AddAsync(soapNote);
-                var result = MapToSoapNoteDTO(createdNote);
+                await _soapNoteRepository.AddAsync(soapNote);
+                var result = _mapper.Map<SoapNoteDTO>(soapNote);
                 
                 // Add therapist and client names for the response
                 result.TherapistName = $"{therapist.FirstName} {therapist.LastName}";
@@ -209,7 +213,7 @@ namespace MassageBooking.API.Controllers
         /// <param name="id">The SOAP note ID</param>
         /// <param name="request">The updated SOAP note data</param>
         /// <returns>The updated SOAP note</returns>
-        [HttpPut("{id}")]
+        [HttpPut("{id:guid}")]
         [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult<SoapNoteDTO>> Update(Guid id, [FromBody] UpdateSoapNoteDTO request)
         {
@@ -227,16 +231,11 @@ namespace MassageBooking.API.Controllers
                 }
 
                 // Update properties
-                existingNote.Subjective = request.Subjective;
-                existingNote.Objective = request.Objective;
-                existingNote.Assessment = request.Assessment;
-                existingNote.Plan = request.Plan;
-                existingNote.AreasOfFocus = request.AreasOfFocus;
-                existingNote.TechniquesUsed = request.TechniquesUsed;
-                existingNote.PressureLevel = request.PressureLevel;
+                _mapper.Map(request, existingNote);
+                existingNote.UpdatedAt = DateTime.UtcNow;
 
-                var updatedNote = await _soapNoteRepository.UpdateAsync(existingNote);
-                return Ok(MapToSoapNoteDTO(updatedNote));
+                await _soapNoteRepository.UpdateAsync(existingNote);
+                return Ok(_mapper.Map<SoapNoteDTO>(existingNote));
             }
             catch (InvalidOperationException ex)
             {
@@ -254,14 +253,14 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="id">The SOAP note ID</param>
         /// <returns>Success or error message</returns>
-        [HttpPost("{id}/finalize")]
+        [HttpPut("{id:guid}/finalize")]
         [Authorize(Roles = "Admin,Therapist")]
         public async Task<ActionResult> Finalize(Guid id)
         {
             try
             {
-                var result = await _soapNoteRepository.FinalizeAsync(id);
-                if (!result)
+                bool success = await _soapNoteRepository.FinalizeAsync(id);
+                if (!success)
                 {
                     return NotFound();
                 }
@@ -280,19 +279,22 @@ namespace MassageBooking.API.Controllers
         /// </summary>
         /// <param name="id">The SOAP note ID</param>
         /// <returns>Success or error message</returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
             {
-                var result = await _soapNoteRepository.DeleteAsync(id);
-                if (!result)
-                {
-                    return NotFound();
-                }
-
-                return Ok(new { Message = "SOAP note deleted successfully." });
+                // Call the void repository method
+                await _soapNoteRepository.DeleteAsync(id);
+                
+                // Return NoContent (204) on successful processing
+                return NoContent(); 
+            }
+            catch (InvalidOperationException ex) // Catch specific exception from repo
+            {
+                 _logger.LogWarning(ex, "Attempted operation on finalized SOAP note {SoapNoteId}", id); // Log specific warning
+                 return BadRequest(ex.Message); // Return 400 for business rule violation
             }
             catch (Exception ex)
             {
@@ -300,74 +302,5 @@ namespace MassageBooking.API.Controllers
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
-
-        #region Helper Methods
-
-        private SoapNoteDTO MapToSoapNoteDTO(SoapNote soapNote)
-        {
-            var therapistName = soapNote.Therapist != null
-                ? $"{soapNote.Therapist.FirstName} {soapNote.Therapist.LastName}"
-                : string.Empty;
-
-            var clientName = soapNote.Client != null
-                ? $"{soapNote.Client.FirstName} {soapNote.Client.LastName}"
-                : string.Empty;
-
-            var appointmentDate = soapNote.Appointment?.StartTime ?? DateTime.MinValue;
-            var serviceName = soapNote.Appointment?.Service?.Name ?? string.Empty;
-
-            return new SoapNoteDTO
-            {
-                SoapNoteId = soapNote.SoapNoteId,
-                AppointmentId = soapNote.AppointmentId,
-                TherapistId = soapNote.TherapistId,
-                TherapistName = therapistName,
-                ClientId = soapNote.ClientId,
-                ClientName = clientName,
-                AppointmentDate = appointmentDate,
-                ServiceName = serviceName,
-                Subjective = soapNote.Subjective,
-                Objective = soapNote.Objective,
-                Assessment = soapNote.Assessment,
-                Plan = soapNote.Plan,
-                AreasOfFocus = soapNote.AreasOfFocus,
-                TechniquesUsed = soapNote.TechniquesUsed,
-                PressureLevel = soapNote.PressureLevel,
-                IsFinalized = soapNote.IsFinalized,
-                CreatedAt = soapNote.CreatedAt,
-                UpdatedAt = soapNote.UpdatedAt,
-                FinalizedAt = soapNote.FinalizedAt
-            };
-        }
-
-        private SoapNoteListItemDTO MapToSoapNoteListItemDTO(SoapNote soapNote)
-        {
-            var therapistName = soapNote.Therapist != null
-                ? $"{soapNote.Therapist.FirstName} {soapNote.Therapist.LastName}"
-                : string.Empty;
-
-            var clientName = soapNote.Client != null
-                ? $"{soapNote.Client.FirstName} {soapNote.Client.LastName}"
-                : string.Empty;
-
-            var appointmentDate = soapNote.Appointment?.StartTime ?? DateTime.MinValue;
-            var serviceName = soapNote.Appointment?.Service?.Name ?? string.Empty;
-
-            return new SoapNoteListItemDTO
-            {
-                SoapNoteId = soapNote.SoapNoteId,
-                AppointmentId = soapNote.AppointmentId,
-                TherapistId = soapNote.TherapistId,
-                TherapistName = therapistName,
-                ClientId = soapNote.ClientId,
-                ClientName = clientName,
-                AppointmentDate = appointmentDate,
-                ServiceName = serviceName,
-                IsFinalized = soapNote.IsFinalized,
-                CreatedAt = soapNote.CreatedAt
-            };
-        }
-
-        #endregion
     }
 } 
